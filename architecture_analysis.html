@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promoter Pulse - Enterprise Architecture Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent: #38bdf8;
+            --success: #10b981;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 3rem 4rem;
+            max-width: 1200px;
+        }
+        .sidebar h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar li {
+            margin-bottom: 0.5rem;
+        }
+        .sidebar a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+        .sidebar a:hover { color: var(--accent); }
+        
+        h1, h2, h3, h4 {
+            color: var(--accent);
+            font-weight: 700;
+        }
+        h1 { font-size: 2.75rem; line-height: 1.2; margin-bottom: 1rem; }
+        h2 { font-size: 1.8rem; margin-top: 3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        
+        .badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            padding: 0.2rem 0.6rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mermaid {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2rem 0;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: #334155;
+            color: var(--accent);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(56, 189, 248, 0.05); }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .status-pill {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-soft-delete { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+        @media (max-width: 1024px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 2rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2563eb',
+                lineColor: '#334155',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a'
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav class="sidebar">
+        <h3>Architecture</h3>
+        <ul>
+            <li><a href="#summary">1. Executive Summary</a></li>
+            <li><a href="#tech-stack">2. Technical Stack</a></li>
+            <li><a href="#database">3. Database Schema</a></li>
+            <li><a href="#relationships">4. Entity Relationships</a></li>
+            <li><a href="#is-analysis">5. Information Systems</a></li>
+            <li><a href="#flows">6. System Flows</a></li>
+            <li><a href="#auth">7. Auth & Tenancy</a></li>
+            <li><a href="#risks">8. Risks & Improvements</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header id="summary">
+            <span class="badge">Enterprise Information Systems Documentation</span>
+            <h1>Promoter Pulse Architecture</h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted);">A comprehensive architectural analysis and database specification for enterprise field force management.</p>
+        </header>
+
+        <section class="card" style="border-left: 4px solid var(--primary);">
+            <h2>1. Executive Summary</h2>
+            <p>Promoter Pulse is a scalable multi-tenant platform designed to solve the complexities of retail field marketing. By integrating real-time geolocation tracking with structured data collection, it provides organizations with a "single source of truth" for field operations.</p>
+            <div class="grid">
+                <div>
+                    <h4>Key Pillars</h4>
+                    <ul>
+                        <li><strong>Granular Multi-Tenancy</strong>: Native Postgres RLS.</li>
+                        <li><strong>Role-Based Access</strong>: Promoter, Manager, Admin layers.</li>
+                        <li><strong>Field Proofing</strong>: GPS-verified check-ins.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Business Impact</h4>
+                    <ul>
+                        <li>Reduction in attendance fraud.</li>
+                        <li>Real-time merchandising visibility.</li>
+                        <li>Automated reporting pipelines.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <h2 id="tech-stack">2. Technical Stack & Patterns</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>The Core Stack</h3>
+                <ul>
+                    <li><strong>Framework</strong>: Next.js 14+ (App Router)</li>
+                    <li><strong>Backend-as-a-Service</strong>: Supabase</li>
+                    <li><strong>Database</strong>: PostgreSQL 15</li>
+                    <li><strong>Auth</strong>: Supabase GoTrue (JWT/RLS)</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Architectural Patterns</h3>
+                <ul>
+                    <li><strong>Feature-Sliced Design</strong>: Modular functionality.</li>
+                    <li><strong>Server Actions</strong>: Secure database mutation.</li>
+                    <li><strong>Shared Client Context</strong>: Real-time UI updates.</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 id="database">3. Database Specification</h2>
+        <p>The schema is designed for <strong>strict isolation</strong> and <strong>auditability</strong>. Every business entity is scoped to a <code>tenant_id</code>.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Table Name</th>
+                    <th>Functional Purpose</th>
+                    <th>Audit Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>tenants</code></td><td>Organization root metadata.</td><td><span class="status-pill status-soft-delete">Soft Delete</span></td></tr>
+                <tr><td><code>users</code></td><td>Application identity mapped to Auth ID.</td><td><span class="status-pill status-soft-delete">Soft Delete</span></td></tr>
+                <tr><td><code>retail_stores</code></td><td>Geocoded store master data.</td><td><span class="status-pill status-soft-delete">Soft Delete</span></td></tr>
+                <tr><td><code>shifts</code></td><td>Primary unit of work (Check-in/Out).</td><td><span class="status-pill status-soft-delete">Soft Delete</span></td></tr>
+                <tr><td><code>visit_reports</code></td><td>Ad-hoc/Remote reporting logs.</td><td><span class="status-pill status-soft-delete">Soft Delete</span></td></tr>
+                <tr><td><code>activity_counters</code></td><td>Quantitative shift metrics.</td><td><span class="status-pill status-active">Immutable</span></td></tr>
+                <tr><td><code>store_audits</code></td><td>JSONB structured field surveys.</td><td><span class="status-pill status-active">Immutable</span></td></tr>
+                <tr><td><code>photo_uploads</code></td><td>Binary storage metadata.</td><td><span class="status-pill status-soft-delete">Soft Delete</span></td></tr>
+                <tr><td><code>audit_logs</code></td><td>Security/Admin event trail.</td><td><span class="status-pill status-active">Immutable</span></td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="relationships">4. Entity Relationship Diagram (ERD)</h2>
+        <div class="mermaid">
+            erDiagram
+                TENANTS ||--o{ USERS : "owns"
+                TENANTS ||--o{ RETAIL_STORES : "owns"
+                TENANTS ||--o{ SHIFTS : "scopes"
+                TENANTS ||--o{ VISIT_REPORTS : "scopes"
+
+                USERS ||--o{ USER_ROLE_ASSIGNMENTS : "assigned"
+                ROLES ||--o{ USER_ROLE_ASSIGNMENTS : "maps"
+                
+                RETAIL_STORES ||--o{ SHIFTS : "location"
+                USERS ||--o{ SHIFTS : "promoter"
+                
+                SHIFTS ||--o{ ACTIVITY_COUNTERS : "tracks"
+                SHIFTS ||--o{ STORE_AUDITS : "collects"
+                SHIFTS ||--o{ PHOTO_UPLOADS : "contains"
+
+                RETAIL_STORES ||--o{ VISIT_REPORTS : "location"
+                USERS ||--o{ VISIT_REPORTS : "reporter"
+        </div>
+
+        <h2 id="is-analysis">5. Information Systems Analysis</h2>
+        <div class="card">
+            <h3>System Modules</h3>
+            <ol>
+                <li><strong>Identity (IAM)</strong>: Handles <code>invite-only</code> onboarding. Admins generate metadata-linked invites that the system consumes to auto-provision users.</li>
+                <li><strong>Operations (Shift Management)</strong>: The logic engine for scheduling. It calculates compliance based on <code>scheduled_start_at</code> vs <code>checked_in_at</code>.</li>
+                <li><strong>Field Intel</strong>: The data collection layer. Uses Postgres <code>JSONB</code> to allow flexible form schemas without migrations.</li>
+            </ol>
+        </div>
+
+        <h2 id="flows">6. Operational System Flows</h2>
+        <h3>Sequence: Shift Check-In & Data Collection</h3>
+        <div class="mermaid">
+            sequenceDiagram
+                participant P as Promoter (Mobile)
+                participant S as Supabase (Backend)
+                participant DB as PostgreSQL (RLS)
+                
+                P->>S: Request Shift Start (GPS)
+                S->>DB: Validate Role & Tenant
+                DB-->>S: Authorized
+                S->>DB: Update Shift Status 'checked_in'
+                P->>S: Submit Store Audit (JSONB)
+                S->>DB: Insert into store_audits
+                DB-->>P: Success (Real-time Sync)
+        </div>
+
+        <h2 id="auth">7. Multi-Tenancy & Security</h2>
+        <div class="card">
+            <h3>Row Level Security (RLS)</h3>
+            <p>Isolation is not handled in application code, but at the <strong>Database Engine level</strong>. This prevents "Leaky Abstractions" where one tenant could accidentally see another's data.</p>
+            <pre style="background: #0f172a; padding: 1rem; border-radius: 8px; color: #38bdf8;">
+CREATE POLICY tenant_isolation ON shifts 
+FOR ALL USING (tenant_id = current_app_tenant_id());</pre>
+            <p><strong>Auth Model:</strong> Integrated with Supabase Auth. A Postgres trigger <code>handle_new_user()</code> manages the mapping between the Auth identity and the Business Identity.</p>
+        </div>
+
+        <h2 id="risks">8. Architectural Risks & Recommendations</h2>
+        <div class="grid">
+            <div class="card" style="border-top: 4px solid #ef4444;">
+                <h3 style="color: #ef4444;">Risks</h3>
+                <ul>
+                    <li><strong>Status Consistency</strong>: <code>visit_reports</code> uses text checks instead of enums.</li>
+                    <li><strong>Storage Coupling</strong>: Photo metadata is tightly coupled to shifts, making ad-hoc photo audits harder to query.</li>
+                </ul>
+            </div>
+            <div class="card" style="border-top: 4px solid var(--success);">
+                <h3 style="color: var(--success);">Recommendations</h3>
+                <ul>
+                    <li><strong>Reporting Engine</strong>: Implement materialized views for daily attendance aggregation.</li>
+                    <li><strong>Indexes</strong>: Add partial indexes for <code>deleted_at</code> to speed up filtering.</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer style="margin-top: 5rem; padding: 2rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted);">
+            <p>&copy; 2026 Promoter Pulse Enterprise Solutions | Senior Solutions Architect Documentation</p>
+        </footer>
+    </main>
+</body>
+</html>

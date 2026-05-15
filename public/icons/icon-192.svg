@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="Promoter Pulse icon">
+  <rect width="192" height="192" rx="40" fill="#155e75"/>
+  <path d="M42 104h26l16-42 26 76 15-34h25" fill="none" stroke="#ecfeff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="96" cy="96" r="68" fill="none" stroke="#67e8f9" stroke-width="8" opacity=".55"/>
+</svg>
