@@ -79,17 +79,13 @@ export default async function SchedulePage({
     <main className="space-y-6 lg:space-y-8">
       <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-medium capitalize text-slate-500">
-            {schedule.viewerScope === "promoter" ? "My shifts and check-ins" : `${schedule.viewerScope} schedule`}
-          </p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             Schedule
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 xl:justify-end">
           <Legend />
-          <ViewSwitcher />
           <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-1 shadow-sm">
             <a
               aria-label="Previous month"
@@ -99,12 +95,6 @@ export default async function SchedulePage({
               <span aria-hidden="true" className="text-xl leading-none">
                 &lt;
               </span>
-            </a>
-            <a
-              className="hidden h-9 items-center rounded-xl px-4 text-sm font-bold text-slate-500 transition hover:bg-slate-50 sm:inline-flex"
-              href={monthHref(new Date())}
-            >
-              Today
             </a>
             <p className="min-w-32 text-center text-lg font-semibold text-slate-950">
               {formatMonthHeading(visibleMonth)}
@@ -196,24 +186,6 @@ function Legend() {
           </span>
         );
       })}
-    </div>
-  );
-}
-
-function ViewSwitcher() {
-  return (
-    <div className="grid grid-cols-3 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
-      {["Month", "Week", "Day"].map((view) => (
-        <span
-          className={[
-            "h-8 rounded-xl px-4 text-center text-xs font-bold uppercase leading-8",
-            view === "Month" ? "bg-slate-200 text-slate-700" : "text-slate-500"
-          ].join(" ")}
-          key={view}
-        >
-          {view}
-        </span>
-      ))}
     </div>
   );
 }
