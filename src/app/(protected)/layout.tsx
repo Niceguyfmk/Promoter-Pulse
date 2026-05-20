@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { signOut } from "@/features/auth/server/auth-actions";
 import { MobileShellNav } from "@/features/navigation/components/MobileShellNav";
+import { MobilePageHeader } from "@/features/navigation/components/MobilePageHeader";
 import { adminNav, managerNav, primaryNav, ShellNav } from "@/features/navigation/components/ShellNav";
 import { FormSubmitButton } from "@/shared/loading";
 
@@ -44,7 +45,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
         </aside>
 
         <div className="min-w-0">
-          <header className="border-b border-slate-200/80 bg-white/76 backdrop-blur">
+          <header className="hidden border-b border-slate-200/80 bg-white/76 backdrop-blur lg:block">
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-800 lg:hidden">
@@ -94,11 +95,14 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
             </div>
           </header>
 
-          <div className="mx-auto max-w-7xl px-4 py-6 pb-32 sm:px-6 lg:px-10 lg:pb-6">{children}</div>
+          <MobilePageHeader />
+
+          <div className="mx-auto max-w-7xl px-4 py-5 pb-36 sm:px-6 lg:px-10 lg:py-6 lg:pb-6">{children}</div>
         </div>
       </div>
       <MobileShellNav
         isAdmin={isAdmin}
+        isManager={isManager}
         roleLabel={session.roles[0] || "Promoter"}
         userEmail={session.user.email}
         userName={displayName}

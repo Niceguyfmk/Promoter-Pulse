@@ -30,21 +30,21 @@ export function StartWorkdayCard({ activeWorkflow }: { activeWorkflow: ActiveWor
 
   return (
     <>
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <section className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] z-30 rounded-t-[24px] border border-slate-200 bg-white p-5 shadow-[0_-18px_45px_-30px_rgba(15,23,42,0.45)] lg:static lg:rounded-2xl lg:p-4 lg:shadow-sm xl:p-5">
         <div className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-lg font-medium text-slate-800 sm:text-xl">Good Morning !</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-base font-medium text-slate-800 sm:text-xl">Good morning!</h1>
             {!activeWorkflow ? (
               <button
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-600"
+                className="inline-flex h-14 shrink-0 items-center justify-center gap-3 rounded-xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-600"
                 onClick={() => setOpen(true)}
                 type="button"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="8" strokeWidth="1.8" />
                   <path d="M12 8v5l3 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
                 </svg>
-                Start workflow
+                Start workday
               </button>
             ) : null}
           </div>
@@ -69,6 +69,7 @@ export function StartWorkdayCard({ activeWorkflow }: { activeWorkflow: ActiveWor
           ) : null}
         </div>
       </section>
+      <div className="h-24 lg:hidden" aria-hidden="true" />
 
       {open ? (
         <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 px-4">
