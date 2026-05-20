@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import type { ReactNode } from "react";
 
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import {
@@ -8,6 +9,13 @@ import {
 import { deleteVisitReportAction, reviewVisitReportAction } from "@/features/attendance/server/visit-report-actions";
 import type { Json } from "@/shared/supabase/database.types";
 import { extractSurveyLabels } from "@/features/forms/lib/survey-schema";
+import {
+  createSummaryReportService,
+  normalizeSummaryPeriod,
+  type SummaryReportData,
+  type SummaryReportMetric,
+  type SummaryReportPeriod
+} from "@/features/reports/server/summary-report-service";
 import { FormSubmitButton, LoadingLink as Link } from "@/shared/loading";
 
 type ReportSortColumn = "form" | "promoter" | "submitted" | "duration" | "checkin" | "status";
@@ -442,15 +450,25 @@ export default async function ReportsPage({
     formName?: string;
     promoterName?: string;
     reportId?: string;
+    summaryPeriod?: string;
     submittedDate?: string;
     status?: string;
     sortBy?: string;
     sortDir?: string;
+    tab?: string;
   }>;
 }) {
   const [session, filters] = await Promise.all([createAuthService().requireSession(), searchParams]);
   const canReview = session.roles.some((role) => role === "admin" || role === "manager");
   const reportService = createVisitReportService();
+  const activeTab = filters.tab === "summary" ? "summary" : "reports";
+
+  if (activeTab === "summary") {
+    const period = normalizeSummaryPeriod(filters.summaryPeriod);
+    const summary = await createSummaryReportService().getSummary(period);
+
+    return <SummaryReportsView period={period} summary={summary} />;
+  }
 
   if (!canReview) {
     const reports = await reportService.listPromoterReports({
@@ -469,6 +487,7 @@ export default async function ReportsPage({
 
     return (
       <main className="space-y-6 lg:space-y-8">
+        <ReportsTabs activeTab="reports" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-medium text-slate-500">Promoter reports</p>
@@ -578,9 +597,10 @@ export default async function ReportsPage({
     const report = await reportService.getReportForReview(filters.reportId);
 
     if (!report) {
-      return (
-        <main className="space-y-6 lg:space-y-8">
-          <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href="/reports">
+    return (
+      <main className="space-y-6 lg:space-y-8">
+        <ReportsTabs activeTab="reports" />
+        <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href="/reports">
             Back to reports
           </Link>
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-sm">
@@ -611,6 +631,7 @@ export default async function ReportsPage({
 
   return (
     <main className="space-y-6 lg:space-y-8">
+      <ReportsTabs activeTab="reports" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">Manager review</p>
@@ -890,6 +911,374 @@ function ManagerStatusCard({
       </div>
     </div>
   );
+}
+
+function ReportsTabs({ activeTab }: { activeTab: "reports" | "summary" }) {
+  const tabs = [
+    { href: "/reports?tab=summary&summaryPeriod=day", label: "Summary", value: "summary" },
+    { href: "/reports", label: "Review", value: "reports" }
+  ] as const;
+
+  return (
+    <nav className="flex w-full gap-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm sm:w-fit">
+      {tabs.map((tab) => (
+        <Link
+          className={[
+            "flex h-11 flex-1 items-center justify-center rounded-xl px-5 text-sm font-bold transition sm:flex-none",
+            activeTab === tab.value ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          ].join(" ")}
+          href={tab.href as Route}
+          key={tab.value}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function SummaryReportsView({ period, summary }: { period: SummaryReportPeriod; summary: SummaryReportData }) {
+  const activityRows: SummaryReportMetric[] = [
+    { label: "Forms", value: summary.activitiesByType.forms },
+    { label: "Retail Audits", value: summary.activitiesByType.retailAudits },
+    { label: "Photos", value: summary.activitiesByType.photos },
+    { label: "Client Notes", value: summary.activitiesByType.clientNotes },
+    { label: "New Clients", value: summary.activitiesByType.newClients },
+    { label: "Client Conversions", value: summary.activitiesByType.clientConversions },
+    { label: "Sales Documents", value: summary.activitiesByType.salesDocuments }
+  ];
+  const formsRows = summary.formsBreakdown.length > 0 ? summary.formsBreakdown : [{ label: "Daily Check-in", value: 0 }];
+  const visitPlanRows: SummaryReportMetric[] = [
+    { label: "Total visits done", value: summary.visitPlans.totalVisitsDone },
+    { label: "Scheduled", value: summary.visitPlans.scheduled },
+    { label: "Visited as scheduled", value: summary.visitPlans.visitedAsScheduled },
+    { label: "Unscheduled visits", value: summary.visitPlans.unscheduledVisits },
+    { label: "Missed schedule", value: summary.visitPlans.missedSchedule }
+  ];
+
+  return (
+    <main className="space-y-6 lg:space-y-8">
+      <ReportsTabs activeTab="summary" />
+
+      <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{summary.organizationName} Summary Report</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Reports Summary
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            See your summary of activities below for {summary.periodLabel}.
+          </p>
+        </div>
+        <PeriodSwitcher currentPeriod={period} />
+      </section>
+
+      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div className="grid md:grid-cols-3">
+          <HeroKpiCard
+            accent="bg-pink-600"
+            label="Reps"
+            sublabel={`Avg. active reps/day: ${formatDecimal(summary.hero.avgActiveRepsPerDay)}`}
+            value={summary.hero.reps}
+          />
+          <HeroKpiCard
+            accent="bg-teal-500"
+            label="Client Visits"
+            sublabel={`Avg. client visits/day: ${formatDecimal(summary.hero.avgClientVisitsPerDay)}`}
+            value={summary.hero.clientVisits}
+          />
+          <HeroKpiCard
+            accent="bg-lime-400"
+            label="Activities"
+            sublabel={`Avg. field activities/day: ${formatDecimal(summary.hero.avgActivitiesPerDay)}`}
+            value={summary.hero.activities}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <SummaryTrendChart data={summary.trend} />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-4">
+        <EfficiencyCard label="Days Active" value={summary.efficiency.daysActive.toString()} />
+        <EfficiencyCard label="Working Time" value={formatDuration(summary.efficiency.workingMinutes)} />
+        <EfficiencyCard label="Total Mileage" value={summary.efficiency.totalMileage.toFixed(2)} />
+        <EfficiencyCard label="Visited Clients" value={summary.efficiency.visitedClients.toString()} />
+      </section>
+
+      <SummaryBreakdownSection
+        chart={<DonutChart data={activityRows} palette={["#0877bd", "#14b8a6", "#cbd5e1", "#f59e0b", "#22c55e", "#a855f7", "#ef4444"]} />}
+        rows={activityRows}
+        title="Activities by Type"
+      />
+
+      <SummaryBreakdownSection
+        chart={<DonutChart data={formsRows} palette={["#0877bd", "#38bdf8", "#14b8a6"]} />}
+        rows={formsRows}
+        title="Forms"
+      />
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <SectionHeading title="Sales and Merchandising" />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl bg-slate-50 p-5">
+            <p className="text-sm font-medium text-slate-500">Sales documents</p>
+            <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
+              {summary.salesAndMerchandising.salesDocuments}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-5">
+            <p className="text-sm font-medium text-slate-500">Total Value</p>
+            <p className="mt-4 text-4xl font-semibold tracking-tight text-teal-700">
+              {formatCurrency(summary.salesAndMerchandising.totalValue)}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <SummaryBreakdownSection
+        chart={<DonutChart data={visitPlanRows} palette={["#94a3b8", "#14b8a6", "#22c55e", "#a3a3a3", "#ef4444"]} />}
+        rows={visitPlanRows}
+        title="Visit Plans"
+      />
+    </main>
+  );
+}
+
+function PeriodSwitcher({ currentPeriod }: { currentPeriod: SummaryReportPeriod }) {
+  const periods: Array<{ label: string; value: SummaryReportPeriod }> = [
+    { label: "Day", value: "day" },
+    { label: "Week", value: "week" },
+    { label: "Month", value: "month" },
+    { label: "Year", value: "year" }
+  ];
+
+  return (
+    <div className="grid grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+      {periods.map((item) => (
+        <Link
+          className={[
+            "h-10 rounded-xl px-4 text-center text-sm font-bold leading-10 transition",
+            currentPeriod === item.value ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-50"
+          ].join(" ")}
+          href={`/reports?tab=summary&summaryPeriod=${item.value}` as Route}
+          key={item.value}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function HeroKpiCard({
+  accent,
+  label,
+  sublabel,
+  value
+}: {
+  accent: string;
+  label: string;
+  sublabel: string;
+  value: number;
+}) {
+  return (
+    <article className="border-b border-slate-200 md:border-b-0 md:border-r md:last:border-r-0">
+      <div className={`h-1.5 ${accent}`} />
+      <div className="px-6 py-7 text-center">
+        <h2 className="text-2xl font-medium text-slate-500">{label}</h2>
+        <p className="mt-4 text-6xl font-semibold tracking-tight text-slate-950">{value}</p>
+        <p className="mt-4 text-sm font-medium text-slate-500">{sublabel}</p>
+      </div>
+    </article>
+  );
+}
+
+function EfficiencyCard({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="rounded-[24px] border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{value}</p>
+    </article>
+  );
+}
+
+function SummaryBreakdownSection({
+  chart,
+  rows,
+  title
+}: {
+  chart: ReactNode;
+  rows: SummaryReportMetric[];
+  title: string;
+}) {
+  return (
+    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <SectionHeading title={title} />
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,0.9fr)_minmax(280px,1fr)] lg:items-center">
+        <MetricTable rows={rows} />
+        {chart}
+      </div>
+    </section>
+  );
+}
+
+function SectionHeading({ title }: { title: string }) {
+  return (
+    <div className="border-b border-slate-200 pb-2">
+      <h2 className="text-2xl font-semibold tracking-tight text-slate-950">{title}</h2>
+    </div>
+  );
+}
+
+function MetricTable({ rows }: { rows: SummaryReportMetric[] }) {
+  return (
+    <div className="divide-y divide-slate-100">
+      {rows.map((row) => (
+        <div className="grid grid-cols-[minmax(0,1fr)_80px] gap-4 py-3 text-sm" key={row.label}>
+          <span className="font-medium text-slate-700">{row.label}</span>
+          <span className="text-right font-semibold tabular-nums text-slate-950">{row.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DonutChart({ data, palette }: { data: SummaryReportMetric[]; palette: string[] }) {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  const visible = data.filter((item) => item.value > 0);
+  const legend = visible[0]?.label || "No activity";
+
+  return (
+    <div className="flex min-h-72 flex-col items-center justify-center gap-4">
+      <svg aria-label={`${legend} donut chart`} className="h-56 w-56 -rotate-90" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" fill="none" r={radius} stroke="#e2e8f0" strokeWidth="24" />
+        {total > 0
+          ? visible.map((item, index) => {
+              const dash = (item.value / total) * circumference;
+              const strokeDasharray = `${dash} ${circumference - dash}`;
+              const strokeDashoffset = -offset;
+              offset += dash;
+
+              return (
+                <circle
+                  cx="80"
+                  cy="80"
+                  fill="none"
+                  key={item.label}
+                  r={radius}
+                  stroke={palette[index % palette.length]}
+                  strokeDasharray={strokeDasharray}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="butt"
+                  strokeWidth="24"
+                />
+              );
+            })
+          : null}
+      </svg>
+      <div className="flex flex-wrap justify-center gap-3 text-xs font-semibold text-slate-500">
+        {visible.length > 0 ? (
+          visible.map((item, index) => (
+            <span className="inline-flex items-center gap-2" key={item.label}>
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette[index % palette.length] }} />
+              {item.label}
+            </span>
+          ))
+        ) : (
+          <span>No activity</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
+  const width = 820;
+  const height = 260;
+  const padding = 34;
+  const maxValue = Math.max(1, ...data.flatMap((point) => [point.reps, point.clientVisits, point.activities]));
+  const pointFor = (value: number, index: number) => ({
+    x: padding + (index / Math.max(data.length - 1, 1)) * (width - padding * 2),
+    y: height - padding - (value / maxValue) * (height - padding * 2)
+  });
+  const series = [
+    { color: "#db2777", key: "reps", label: "Reps" },
+    { color: "#14b8a6", key: "clientVisits", label: "Client visits" },
+    { color: "#c8d400", key: "activities", label: "Total activities" }
+  ] as const;
+
+  return (
+    <div>
+      <svg className="h-72 w-full" preserveAspectRatio="none" viewBox={`0 0 ${width} ${height}`}>
+        {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
+          const y = height - padding - tick * (height - padding * 2);
+          return (
+            <g key={tick}>
+              <line stroke="#e2e8f0" strokeWidth="1" x1={padding} x2={width - padding} y1={y} y2={y} />
+              <text fill="#64748b" fontSize="11" x="4" y={y + 4}>
+                {formatAxisValue(maxValue * tick, maxValue)}
+              </text>
+            </g>
+          );
+        })}
+        {series.map((item) => (
+          <g key={item.key}>
+            <polyline
+              fill="none"
+              points={data.map((point, index) => {
+                const coordinates = pointFor(point[item.key], index);
+                return `${coordinates.x},${coordinates.y}`;
+              }).join(" ")}
+              stroke={item.color}
+              strokeWidth="3"
+            />
+            {data.map((point, index) => {
+              const coordinates = pointFor(point[item.key], index);
+              return <circle cx={coordinates.x} cy={coordinates.y} fill={item.color} key={`${item.key}-${point.label}`} r="3.5" />;
+            })}
+          </g>
+        ))}
+      </svg>
+      <div className="flex flex-wrap justify-center gap-5 text-sm font-semibold text-slate-600">
+        {series.map((item) => (
+          <span className="inline-flex items-center gap-2" key={item.key}>
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatDecimal(value: number) {
+  return value.toFixed(2);
+}
+
+function formatDuration(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
+function formatAxisValue(value: number, maxValue: number) {
+  if (maxValue <= 2) {
+    return value.toFixed(1);
+  }
+
+  return Math.round(value).toString();
 }
 
 
