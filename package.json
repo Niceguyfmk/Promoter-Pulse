@@ -24,6 +24,8 @@
     "react-dom": "^19.2.6",
     "server-only": "^0.0.1",
     "supabase": "^2.98.2",
+    "survey-core": "^2.5.25",
+    "survey-react-ui": "^2.5.25",
     "zod": "^4.4.3"
   },
   "devDependencies": {

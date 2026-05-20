@@ -25,11 +25,11 @@ export type VisitReportWithRelations = VisitReportRow & {
 export type VisitReportPayload = {
   reportId: string;
   storeId: string;
-  formAnswers: Record<string, string>;
+  formId: string | null;
+  formName: string | null;
+  formAnswers: Record<string, Json>;
   photoItems: Array<{ label: string; name: string; size: number; file: File }>;
   note: string | null;
-  salesNumbers: Record<string, string>;
-  merchandising: Record<string, string>;
   submit: boolean;
 };
 
@@ -183,6 +183,48 @@ export class VisitReportService {
         } satisfies VisitReportPhotoItem;
       })
     );
+  }
+
+  async uploadSurveyFile(reportId: string, storeId: string, file: File) {
+    const session = await this.authService.requireSession();
+    await this.ensurePhotoBucket();
+    const admin = createSupabaseAdminClient();
+
+    if (file.size > MAX_PHOTO_SIZE_BYTES) {
+      throw new AppError("VALIDATION_ERROR", `File exceeds the 10 MB upload limit`);
+    }
+
+    const contentType = file.type || "application/octet-stream";
+    const isImage = contentType.startsWith("image/");
+    if (isImage && !ALLOWED_PHOTO_TYPES.has(contentType)) {
+      throw new AppError("VALIDATION_ERROR", `Image must be a JPG, PNG, WebP, or HEIC image`);
+    }
+
+    const storagePath = [
+      session.user.tenantId,
+      storeId,
+      reportId,
+      `${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
+    ].join("/");
+
+    const { error } = await admin.storage
+      .from(VISIT_REPORT_PHOTO_BUCKET)
+      .upload(storagePath, file, { contentType, upsert: false });
+
+    if (error) {
+      throw new AppError("INTERNAL_ERROR", `Failed to upload file`, error);
+    }
+
+    // Immediately return a signed URL so SurveyJS can preview it
+    const { data: urlData } = await admin.storage
+      .from(VISIT_REPORT_PHOTO_BUCKET)
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 30); // 30 days expiry
+
+    return {
+      name: file.name,
+      type: file.type,
+      content: urlData?.signedUrl || ""
+    };
   }
 
   private async withSignedPhotoUrls(items: VisitReportPhotoItem[]) {
@@ -390,6 +432,56 @@ export class VisitReportService {
       throw new AppError("INVALID_STATE", "This report can no longer be edited");
     }
 
+    let resolvedFormId = payload.formId;
+
+    if (!resolvedFormId) {
+      const { data: defaultAssignment, error: defaultAssignmentError } = await supabase
+        .from("place_form_assignments")
+        .select("form_id")
+        .eq("store_id", payload.storeId)
+        .limit(1)
+        .maybeSingle();
+
+      if (defaultAssignmentError) {
+        throw new AppError("INTERNAL_ERROR", "Failed to resolve assigned form", defaultAssignmentError);
+      }
+
+      resolvedFormId = defaultAssignment?.form_id ?? null;
+    }
+
+    if (!resolvedFormId) {
+      throw new AppError("VALIDATION_ERROR", "Select an assigned form before saving the report");
+    }
+
+    const { data: formRecord, error: formRecordError } = await supabase
+      .from("survey_forms")
+      .select("id, name, tenant_id, is_active, deleted_at")
+      .eq("id", resolvedFormId)
+      .maybeSingle();
+
+    if (formRecordError) {
+      throw new AppError("INTERNAL_ERROR", "Failed to load selected form", formRecordError);
+    }
+
+    if (!formRecord || formRecord.tenant_id !== session.user.tenantId || !formRecord.is_active || formRecord.deleted_at) {
+      throw new AppError("VALIDATION_ERROR", "This form is not available for the selected place");
+    }
+
+    const { data: assignment, error: assignmentError } = await supabase
+      .from("place_form_assignments")
+      .select("form_id")
+      .eq("store_id", payload.storeId)
+      .eq("form_id", resolvedFormId)
+      .maybeSingle();
+
+    if (assignmentError) {
+      throw new AppError("INTERNAL_ERROR", "Failed to verify assigned form", assignmentError);
+    }
+
+    if (!assignment) {
+      throw new AppError("VALIDATION_ERROR", "This form is not assigned to the selected place");
+    }
+
     const existingPhotoItems = asVisitReportPhotoItems(existingReport.photo_items);
     const uploadedPhotoItems = await this.uploadVisitReportPhotos({
       tenantId: session.user.tenantId,
@@ -404,12 +496,11 @@ export class VisitReportService {
     }
 
     const updates = {
-      form_name: "Daily Check-in",
+      form_id: resolvedFormId,
+      form_name: formRecord.name,
       form_answers: payload.formAnswers as Json,
       ...(mergedPhotoItems.size > 0 ? { photo_items: Array.from(mergedPhotoItems.values()) as Json } : {}),
       note: payload.note,
-      sales_numbers: payload.salesNumbers as Json,
-      merchandising: payload.merchandising as Json,
       ...(payload.submit
         ? {
             status: "submitted" as const,

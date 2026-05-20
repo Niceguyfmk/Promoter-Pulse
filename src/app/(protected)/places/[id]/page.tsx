@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { RemoteVisitWorkspace } from "@/features/attendance/components/RemoteVisitWorkspace";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { createVisitReportService } from "@/features/attendance/server/visit-report-service";
+import { createFormsService } from "@/features/forms/server/forms-service";
 
 export default async function PlaceVisitPage({
   params,
@@ -23,9 +24,10 @@ export default async function PlaceVisitPage({
   }
 
   const service = createVisitReportService();
-  const [store, report] = await Promise.all([
+  const [store, report, assignedForms] = await Promise.all([
     service.getPlace(id).catch(() => null),
-    reportId ? service.getEditableReport(reportId) : service.getActiveReportForPlace(id)
+    reportId ? service.getEditableReport(reportId) : service.getActiveReportForPlace(id),
+    createFormsService().listAssignedFormsForStore(id)
   ]);
 
   if (!store) {
@@ -38,6 +40,7 @@ export default async function PlaceVisitPage({
 
   return (
     <RemoteVisitWorkspace
+      assignedForms={assignedForms}
       report={report}
       store={{
         id: store.id,

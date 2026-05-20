@@ -30,7 +30,7 @@ export async function signIn(formData: FormData) {
   redirect("/");
 }
 
-export async function signUp(formData: FormData) {
+export async function signUp() {
   return {
     error:
       "Direct signup is disabled. Ask a platform admin to invite you to your company tenant."

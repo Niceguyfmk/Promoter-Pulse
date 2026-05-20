@@ -56,20 +56,29 @@ export default async function EditPlacePage({
     { data: users },
     { data: roles },
     { data: tags },
+    { data: forms },
     { data: companyAssignments },
     { data: promoterAssignments },
     { data: representativeAssignments },
-    { data: tagAssignments }
+    { data: tagAssignments },
+    { data: formAssignments }
   ] = await Promise.all([
     admin.from("retail_stores").select("*").eq("id", id).single(),
     admin.from("tenants").select("id, name").is("deleted_at", null).order("name"),
     admin.from("users").select("id, tenant_id, email, full_name").is("deleted_at", null).eq("is_active", true),
     admin.from("user_role_assignments").select("user_id, role_id"),
     admin.from("place_tags").select("id, name").order("name"),
+    admin
+      .from("survey_forms")
+      .select("id, tenant_id, name, description, is_active")
+      .eq("is_active", true)
+      .is("deleted_at", null)
+      .order("name"),
     admin.from("place_company_assignments").select("tenant_id").eq("store_id", id),
     admin.from("place_promoter_assignments").select("user_id").eq("store_id", id),
     admin.from("place_representative_assignments").select("user_id").eq("store_id", id),
-    admin.from("place_tag_assignments").select("tag_id").eq("store_id", id)
+    admin.from("place_tag_assignments").select("tag_id").eq("store_id", id),
+    admin.from("place_form_assignments").select("form_id").eq("store_id", id)
   ]);
 
   if (!store) {
@@ -122,6 +131,15 @@ export default async function EditPlacePage({
       <PlaceForm
         action={updatePlaceFromPage}
         companies={companies}
+        forms={((forms || []) as { id: string; tenant_id: string; name: string; description: string | null; is_active: boolean }[])
+          .filter((form) => session.roles.includes("admin") || form.tenant_id === session.user.tenantId)
+          .map((form) => ({
+            id: form.id,
+            tenantId: form.tenant_id,
+            name: form.name,
+            description: form.description,
+            isActive: form.is_active
+          }))}
         initialValue={{
           id: typedStore.id,
           name: typedStore.name,
@@ -150,6 +168,7 @@ export default async function EditPlacePage({
           representativeIds: ((representativeAssignments || []) as { user_id: string }[]).map(
             (assignment) => assignment.user_id
           ),
+          surveyFormIds: ((formAssignments || []) as { form_id: string }[]).map((assignment) => assignment.form_id),
           tagNames: ((tagAssignments || []) as { tag_id: string }[])
             .map((assignment) => tagNameById.get(assignment.tag_id))
             .filter(Boolean) as string[]

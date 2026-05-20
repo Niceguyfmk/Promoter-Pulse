@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Route } from "next";
 
-import { isAppError } from "@/core/errors/app-error";
+import { AppError, isAppError } from "@/core/errors/app-error";
+import type { Json } from "@/shared/supabase/database.types";
 import type { GpsCheckInMetadata } from "../lib/gps-validation";
 import { createVisitReportService } from "./visit-report-service";
 
@@ -104,29 +105,35 @@ export async function saveVisitReportAction(formData: FormData) {
   const reportId = formData.get("reportId") as string;
   const storeId = formData.get("storeId") as string;
   const submit = formData.get("intent") === "submit";
+  const formId = String(formData.get("formId") ?? "").trim();
+  const formName = String(formData.get("formName") ?? "").trim();
+  const formAnswersJson = String(formData.get("formAnswersJson") ?? "{}");
   const photoItems = [
     fileSummary(formData, "selfiePhoto", "Selfie in-store"),
     fileSummary(formData, "displayPhoto", "Complete display and fixture")
   ].filter((item): item is { label: string; name: string; size: number; file: File } => Boolean(item));
 
+  let formAnswers: Record<string, Json>;
+
+  try {
+    const parsed = JSON.parse(formAnswersJson);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new AppError("VALIDATION_ERROR", "Form answers must be a JSON object");
+    }
+    formAnswers = parsed as Record<string, Json>;
+  } catch {
+    throw new AppError("VALIDATION_ERROR", "Form answers are invalid");
+  }
+
   await createVisitReportService().saveVisitReport({
     reportId,
     storeId,
     submit,
-    formAnswers: {
-      interactions: text(formData, "interactions"),
-      demos: text(formData, "demos"),
-      demosWithPhoto: text(formData, "demosWithPhoto")
-    },
+    formId: formId || null,
+    formName: formName || null,
+    formAnswers,
     photoItems,
-    note: optionalText(formData, "note"),
-    salesNumbers: {
-      coreProducts: text(formData, "coreProducts"),
-      accessories: text(formData, "accessories")
-    },
-    merchandising: {
-      displayFixtureComplete: text(formData, "displayFixtureComplete")
-    }
+    note: optionalText(formData, "note")
   });
 
   revalidatePath(`/places/${storeId}`);
@@ -135,8 +142,6 @@ export async function saveVisitReportAction(formData: FormData) {
   if (submit) {
     redirect("/places" as Route);
   }
-
-  redirect("/reports" as Route);
 }
 
 export async function reviewVisitReportAction(formData: FormData) {
@@ -152,4 +157,17 @@ export async function deleteVisitReportAction(formData: FormData) {
   await createVisitReportService().deleteReport(reportId);
   revalidatePath("/reports");
   redirect("/reports" as Route);
+}
+
+export async function uploadSurveyFileAction(formData: FormData) {
+  const reportId = formData.get("reportId") as string;
+  const storeId = formData.get("storeId") as string;
+  const file = formData.get("file") as File;
+
+  if (!reportId || !storeId || !file || !(file instanceof File)) {
+    throw new Error("Invalid file upload parameters");
+  }
+
+  const { createVisitReportService } = await import("./visit-report-service");
+  return await createVisitReportService().uploadSurveyFile(reportId, storeId, file);
 }

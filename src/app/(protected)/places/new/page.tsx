@@ -23,11 +23,17 @@ export default async function NewPlacePage() {
   }
 
   const admin = createSupabaseAdminClient();
-  const [{ data: tenants }, { data: users }, { data: roles }, { data: tags }] = await Promise.all([
+  const [{ data: tenants }, { data: users }, { data: roles }, { data: tags }, { data: forms }] = await Promise.all([
     admin.from("tenants").select("id, name").is("deleted_at", null).order("name"),
     admin.from("users").select("id, tenant_id, email, full_name").is("deleted_at", null).eq("is_active", true),
     admin.from("user_role_assignments").select("user_id, role_id"),
-    admin.from("place_tags").select("id, name").order("name")
+    admin.from("place_tags").select("id, name").order("name"),
+    admin
+      .from("survey_forms")
+      .select("id, tenant_id, name, description, is_active")
+      .eq("is_active", true)
+      .is("deleted_at", null)
+      .order("name")
   ]);
 
   const allowedRoles = new Set<Role>(["admin", "manager"]);
@@ -70,6 +76,15 @@ export default async function NewPlacePage() {
       <PlaceForm
         action={createPlaceFromPage}
         companies={companies}
+        forms={((forms || []) as { id: string; tenant_id: string; name: string; description: string | null; is_active: boolean }[])
+          .filter((form) => session.roles.includes("admin") || form.tenant_id === session.user.tenantId)
+          .map((form) => ({
+            id: form.id,
+            tenantId: form.tenant_id,
+            name: form.name,
+            description: form.description,
+            isActive: form.is_active
+          }))}
         promoters={promoters}
         representatives={representatives}
         submitLabel="Save"

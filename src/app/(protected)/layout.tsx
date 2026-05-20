@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { signOut } from "@/features/auth/server/auth-actions";
 import { MobileShellNav } from "@/features/navigation/components/MobileShellNav";
-import { adminNav, primaryNav, ShellNav } from "@/features/navigation/components/ShellNav";
+import { adminNav, managerNav, primaryNav, ShellNav } from "@/features/navigation/components/ShellNav";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const session = await createAuthService().getSession();
@@ -15,7 +15,8 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
 
   const displayName = session.user.fullName || "Field Promoter";
   const isAdmin = session.roles.includes("admin");
-  const navItems = isAdmin ? adminNav : primaryNav;
+  const isManager = session.roles.includes("manager");
+  const navItems = isAdmin ? adminNav : isManager ? managerNav : primaryNav;
 
   return (
     <div className="min-h-dvh bg-[linear-gradient(180deg,#eef3fb_0%,#f7f9fc_38%,#f4f6fb_100%)] text-slate-950">

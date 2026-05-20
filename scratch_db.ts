@@ -14,10 +14,10 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function run() {
-  const { data: users, error: errUsers } = await supabase.from("users").select("id, email, tenant_id");
+  const { data: users } = await supabase.from("users").select("id, email, tenant_id");
   console.log("Users:", users);
 
-  const { data: stores, error: errStores } = await supabase.from("retail_stores").select("id, name, tenant_id");
+  const { data: stores } = await supabase.from("retail_stores").select("id, name, tenant_id");
   console.log("Stores:", stores);
 }
 

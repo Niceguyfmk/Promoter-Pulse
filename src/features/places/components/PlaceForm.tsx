@@ -8,6 +8,13 @@ export type CompanyOption = { id: string; name: string };
 export type RepresentativeOption = { id: string; name: string; email: string; tenantId: string };
 export type PromoterOption = { id: string; name: string; email: string; tenantId: string };
 export type TagOption = { id: string; name: string };
+export type PlaceSurveyFormOption = {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  tenantId: string;
+};
 
 export type PlaceFormInitialValue = {
   id?: string;
@@ -33,12 +40,14 @@ export type PlaceFormInitialValue = {
   companyId?: string;
   promoterIds?: string[];
   representativeIds?: string[];
+  surveyFormIds?: string[];
   tagNames?: string[];
 };
 
 export function PlaceForm({
   action,
   companies,
+  forms,
   initialValue,
   promoters,
   representatives,
@@ -47,6 +56,7 @@ export function PlaceForm({
 }: {
   action: (formData: FormData) => void | Promise<void>;
   companies: CompanyOption[];
+  forms: PlaceSurveyFormOption[];
   initialValue?: PlaceFormInitialValue;
   promoters: PromoterOption[];
   representatives: RepresentativeOption[];
@@ -61,6 +71,7 @@ export function PlaceForm({
     initialValue?.promoterIds || []
   );
   const [selectedReps, setSelectedReps] = useState<string[]>(initialValue?.representativeIds || []);
+  const [selectedSurveyForms, setSelectedSurveyForms] = useState<string[]>(initialValue?.surveyFormIds || []);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialValue?.tagNames || []);
   const [tagSearch, setTagSearch] = useState("");
   const [latitude, setLatitude] = useState(initialValue?.latitude?.toString() || "");
@@ -80,6 +91,7 @@ export function PlaceForm({
   }, [tagSearch, tags, selectedTags]);
   const filteredPromoters = promoters.filter((promoter) => promoter.tenantId === selectedCompany);
   const filteredRepresentatives = representatives.filter((rep) => rep.tenantId === selectedCompany);
+  const filteredForms = forms.filter((form) => form.tenantId === selectedCompany);
   const canAddSearchedTag =
     tagSearch.trim() &&
     !tags.some((tag) => tag.name.toLowerCase() === tagSearch.trim().toLowerCase()) &&
@@ -117,6 +129,9 @@ export function PlaceForm({
       ))}
       {selectedReps.map((id) => (
         <input key={id} name="representativeIds" type="hidden" value={id} />
+      ))}
+      {selectedSurveyForms.map((id) => (
+        <input key={id} name="surveyFormIds" type="hidden" value={id} />
       ))}
       {selectedTags.map((name) => (
         <input key={name} name="tagNames" type="hidden" value={name} />
@@ -162,6 +177,7 @@ export function PlaceForm({
                 setSelectedCompany(event.target.value);
                 setSelectedPromoters([]);
                 setSelectedReps([]);
+                setSelectedSurveyForms([]);
               }}
               required
               value={selectedCompany}
@@ -351,6 +367,36 @@ export function PlaceForm({
           placeholder="Add any additional notes here..."
           rows={4}
         />
+      </section>
+
+      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+          Assigned Forms
+        </h2>
+        <div className="grid gap-3 rounded-2xl border border-slate-200 p-4">
+          {filteredForms.length ? (
+            filteredForms.map((form) => (
+              <label className="flex items-start gap-3 text-sm text-slate-700" key={form.id}>
+                <input
+                  checked={selectedSurveyForms.includes(form.id)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-700"
+                  onChange={() => setSelectedSurveyForms((current) => toggleValue(current, form.id))}
+                  type="checkbox"
+                />
+                <span>
+                  <span className="block font-medium text-slate-900">{form.name}</span>
+                  {form.description ? (
+                    <span className="mt-1 block text-slate-500">{form.description}</span>
+                  ) : null}
+                </span>
+              </label>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500">
+              No active forms available for this company yet. Create them in Reports first.
+            </p>
+          )}
+        </div>
       </section>
 
       <div className="flex items-center justify-end gap-3">

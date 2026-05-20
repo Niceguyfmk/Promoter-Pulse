@@ -169,6 +169,42 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["place_tag_assignments"]["Insert"]>;
         Relationships: [];
       };
+      survey_forms: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          name: string;
+          description: string | null;
+          schema_json: Json;
+          is_active: boolean;
+          created_by_user_id: string | null;
+          updated_by_user_id: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          name: string;
+          description?: string | null;
+          schema_json?: Json;
+          is_active?: boolean;
+          created_by_user_id?: string | null;
+          updated_by_user_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["survey_forms"]["Insert"]>;
+        Relationships: [];
+      };
+      place_form_assignments: {
+        Row: { store_id: string; form_id: string; created_at: string };
+        Insert: { store_id: string; form_id: string; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["place_form_assignments"]["Insert"]>;
+        Relationships: [];
+      };
       shifts: {
         Row: {
           id: string;
@@ -224,6 +260,7 @@ export type Database = {
           checkin_at: string | null;
           checkin_distance_meters: number | null;
           checked_out_at: string | null;
+          form_id: string | null;
           form_name: string | null;
           form_answers: Json;
           photo_items: Json;
@@ -251,6 +288,7 @@ export type Database = {
           checkin_at?: string | null;
           checkin_distance_meters?: number | null;
           checked_out_at?: string | null;
+          form_id?: string | null;
           form_name?: string | null;
           form_answers?: Json;
           photo_items?: Json;

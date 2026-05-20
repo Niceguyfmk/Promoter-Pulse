@@ -2,7 +2,6 @@
 
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseServerClient } from "@/shared/supabase/server";
 // Note: We'll use a client action or direct supabase call here since it's a password update
 import { createSupabaseBrowserClient } from "@/shared/supabase/client";
 

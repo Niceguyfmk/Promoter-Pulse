@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Json } from "@/shared/supabase/database.types";
 import type { VisitReportRow } from "@/features/attendance/server/visit-report-service";
 import { saveVisitReportAction } from "@/features/attendance/server/visit-report-actions";
+import { AssignedSurveyForm, type AssignedFormOption } from "@/features/forms/components/AssignedSurveyForm";
 
 type Store = {
   id: string;
@@ -14,14 +15,12 @@ type Store = {
   country: string | null;
 };
 
-function asRecord(value: Json): Record<string, string> {
+function asRecord(value: Json): Record<string, Json> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return {};
   }
 
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [key, typeof item === "string" ? item : ""])
-  );
+  return value as Record<string, Json>;
 }
 
 function formatDuration(seconds: number) {
@@ -31,30 +30,31 @@ function formatDuration(seconds: number) {
   return [hours, minutes, remainingSeconds].map((part) => String(part).padStart(2, "0")).join(":");
 }
 
-export function RemoteVisitWorkspace({ report, store }: { report: VisitReportRow; store: Store }) {
-  const [elapsed, setElapsed] = useState(0);
-  const [activePanel, setActivePanel] = useState<"form" | "photos" | "note">("form");
+export function RemoteVisitWorkspace({
+  assignedForms,
+  report,
+  store
+}: {
+  assignedForms: AssignedFormOption[];
+  report: VisitReportRow;
+  store: Store;
+}) {
+  const visitFormId = "visit-report-form";
   const formAnswers = useMemo(() => asRecord(report.form_answers), [report.form_answers]);
-  const salesNumbers = useMemo(() => asRecord(report.sales_numbers), [report.sales_numbers]);
-  const merchandising = useMemo(() => asRecord(report.merchandising), [report.merchandising]);
-  const hasSubmittedPhotos = Array.isArray(report.photo_items) && report.photo_items.length > 0;
+  const hasSavedForm = Boolean(report.form_id && Object.keys(formAnswers).length > 0);
+  
+  const initialFormId = report.form_id ?? assignedForms[0]?.id ?? "";
+  const initialFormName = assignedForms.find(f => f.id === initialFormId)?.name ?? "";
 
-  useEffect(() => {
-    const startedAt = new Date(report.started_at).getTime();
-    const checkedOutAt = report.checked_out_at ? new Date(report.checked_out_at).getTime() : null;
-    const update = () => {
-      const endTime = checkedOutAt ?? Date.now();
-      setElapsed(Math.max(0, Math.floor((endTime - startedAt) / 1000)));
-    };
+  const [currentAnswers, setCurrentAnswers] = useState<Record<string, Json>>(formAnswers);
+  const [currentFormId, setCurrentFormId] = useState(initialFormId);
+  const [currentFormName, setCurrentFormName] = useState(initialFormName);
 
-    update();
-    if (checkedOutAt) {
-      return;
-    }
-
-    const timer = window.setInterval(update, 1000);
-    return () => window.clearInterval(timer);
-  }, [report.checked_out_at, report.started_at]);
+  const handleFormChange = (formId: string, formName: string, answers: Record<string, Json>) => {
+    setCurrentFormId(formId);
+    setCurrentFormName(formName);
+    setCurrentAnswers(answers);
+  };
 
   return (
     <main className="mx-auto max-w-6xl space-y-5 pb-28">
@@ -95,71 +95,36 @@ export function RemoteVisitWorkspace({ report, store }: { report: VisitReportRow
         </div>
       </section>
 
-      <form action={saveVisitReportAction} className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <form action={saveVisitReportAction} className="hidden" id={visitFormId}>
         <input name="reportId" type="hidden" value={report.id} />
         <input name="storeId" type="hidden" value={store.id} />
+        <input name="formAnswersJson" type="hidden" value={JSON.stringify(currentAnswers)} />
+        <input name="formId" type="hidden" value={currentFormId} />
+        <input name="formName" type="hidden" value={currentFormName} />
+      </form>
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid grid-cols-3 border-b border-slate-200">
-            <PanelButton active={activePanel === "photos"} label="Photo" onClick={() => setActivePanel("photos")} tone="yellow" />
-            <PanelButton active={activePanel === "form"} label="Form" onClick={() => setActivePanel("form")} tone="blue" />
-            <PanelButton active={activePanel === "note"} label="Note" onClick={() => setActivePanel("note")} tone="slate" />
-          </div>
-
           <div className="p-5 sm:p-7">
-            <div className={activePanel === "form" ? "block" : "hidden"}>
-              <DailyCheckInFields
-                formAnswers={formAnswers}
-                merchandising={merchandising}
-                salesNumbers={salesNumbers}
-              />
-            </div>
-
-            <div className={activePanel === "photos" ? "space-y-7" : "hidden"}>
-                <FileField
-                  label="Please take a selfie in-store"
-                  name="selfiePhoto"
-                  required={!hasSubmittedPhotos}
-                />
-                <FileField
-                  label="Please take a photo of complete Display & Fixture"
-                  name="displayPhoto"
-                  required={!hasSubmittedPhotos}
-                />
-            </div>
-
-            <div className={activePanel === "note" ? "block" : "hidden"}>
-              <label className="block">
-                <span className="text-sm font-bold text-slate-800">Visit note</span>
-                <textarea
-                  className="mt-3 min-h-40 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                  defaultValue={report.note || ""}
-                  name="note"
-                  placeholder="Add context for your manager..."
-                />
-              </label>
-            </div>
+            <AssignedSurveyForm
+              forms={assignedForms}
+              formId={visitFormId}
+              initialAnswers={formAnswers}
+              initialFormId={report.form_id}
+              reportId={report.id}
+              storeId={store.id}
+              onChange={handleFormChange}
+            />
           </div>
         </section>
 
         <aside className="space-y-4">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Current visit</p>
-            <div className="mt-4 flex items-center gap-3 text-slate-700">
-              <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8" strokeWidth="1.8" />
-                <path d="M12 8v5l3 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-              </svg>
-              <span className="font-mono text-lg">{formatDuration(elapsed)}</span>
-            </div>
-            <p className="mt-4 text-sm leading-6 text-slate-500">
-              {report.checked_out_at ? "Checked out from" : "Checked in at"}{" "}
-              <span className="font-semibold text-slate-700">{store.name}</span>
-            </p>
-          </section>
+          <VisitTimer checkedOutAt={report.checked_out_at} startedAt={report.started_at} storeName={store.name} />
 
           <button
             className="h-12 w-full rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+            form={visitFormId}
             name="intent"
             type="submit"
             value="save"
@@ -167,124 +132,64 @@ export function RemoteVisitWorkspace({ report, store }: { report: VisitReportRow
             Save progress
           </button>
           <button
-            className="h-12 w-full rounded-xl bg-red-500 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-600"
+            className={`h-12 w-full rounded-xl px-4 text-sm font-bold text-white shadow-sm transition ${hasSavedForm ? "bg-red-500 hover:bg-red-600" : "bg-red-300 cursor-not-allowed"}`}
+            disabled={!hasSavedForm}
+            form={visitFormId}
             name="intent"
             type="submit"
             value="submit"
           >
-            Check out & submit
+            {hasSavedForm ? "Check out & submit" : "Save a form first"}
           </button>
         </aside>
-      </form>
+      </div>
     </main>
   );
 }
 
-function PanelButton({
-  active,
-  label,
-  onClick,
-  tone
+function VisitTimer({
+  checkedOutAt,
+  startedAt,
+  storeName
 }: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  tone: "yellow" | "blue" | "slate";
+  checkedOutAt: string | null;
+  startedAt: string;
+  storeName: string;
 }) {
-  const tones = {
-    yellow: "bg-amber-400 text-white",
-    blue: "bg-sky-600 text-white",
-    slate: "bg-slate-700 text-white"
-  };
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = new Date(startedAt).getTime();
+    const end = checkedOutAt ? new Date(checkedOutAt).getTime() : null;
+    const update = () => {
+      const endTime = end ?? Date.now();
+      setElapsed(Math.max(0, Math.floor((endTime - start) / 1000)));
+    };
+
+    update();
+    if (checkedOutAt) {
+      return;
+    }
+
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, [checkedOutAt, startedAt]);
 
   return (
-    <button
-      className="flex min-h-20 flex-col items-center justify-center gap-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
-      onClick={onClick}
-      type="button"
-    >
-      <span className={`grid h-10 w-10 place-items-center rounded-full ${active ? tones[tone] : "bg-slate-100 text-slate-500"}`}>
-        {label.charAt(0)}
-      </span>
-      {label}
-    </button>
-  );
-}
-
-function DailyCheckInFields({
-  formAnswers,
-  merchandising,
-  salesNumbers
-}: {
-  formAnswers: Record<string, string>;
-  merchandising: Record<string, string>;
-  salesNumbers: Record<string, string>;
-}) {
-  return (
-    <div className="space-y-7">
-      <div>
-        <label className="text-sm font-bold text-slate-800" htmlFor="form-template">Form</label>
-        <select
-          className="mt-3 h-11 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-          defaultValue="daily-check-in"
-          id="form-template"
-        >
-          <option value="daily-check-in">Daily Check-in</option>
-        </select>
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Current visit</p>
+      <div className="mt-4 flex items-center gap-3 text-slate-700">
+        <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" strokeWidth="1.8" />
+          <path d="M12 8v5l3 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+        <span className="font-mono text-lg">{formatDuration(elapsed)}</span>
       </div>
-      <TextField defaultValue={formAnswers.interactions} label="Interactions" name="interactions" />
-      <TextField defaultValue={formAnswers.demos} label="Demos" name="demos" />
-      <TextField defaultValue={formAnswers.demosWithPhoto} label="Demos with Photo" name="demosWithPhoto" />
-      <TextField defaultValue={salesNumbers.coreProducts} label="Daily Sales - Core Products" name="coreProducts" />
-      <TextField defaultValue={salesNumbers.accessories} label="Daily Sales - Accessories" name="accessories" />
-      <TextField defaultValue={merchandising.displayFixtureComplete} label="Merchandising / Display Compliance" name="displayFixtureComplete" placeholder="Enter display compliance notes" />
-    </div>
+      <p className="mt-4 text-sm leading-6 text-slate-500">
+        {checkedOutAt ? "Checked out from" : "Checked in at"}{" "}
+        <span className="font-semibold text-slate-700">{storeName}</span>
+      </p>
+    </section>
   );
 }
 
-function TextField({
-  defaultValue,
-  label,
-  name,
-  placeholder = "Enter an answer"
-}: {
-  defaultValue: string | undefined;
-  label: string;
-  name: string;
-  placeholder?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="flex items-center justify-between text-sm font-bold text-slate-800">
-        {label}
-        <span className="text-red-500">*</span>
-      </span>
-      <input
-        className="mt-3 h-11 w-full rounded-xl border border-slate-300 px-4 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-        defaultValue={defaultValue || ""}
-        name={name}
-        placeholder={placeholder}
-        required
-      />
-    </label>
-  );
-}
-
-function FileField({ label, name, required }: { label: string; name: string; required: boolean }) {
-  return (
-    <label className="block">
-      <span className="flex items-center justify-between text-sm font-bold text-slate-800">
-        {label}
-        <span className="text-red-500">*</span>
-      </span>
-      <input
-        accept="image/*"
-        capture="environment"
-        className="mt-3 block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border file:border-slate-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700"
-        name={name}
-        required={required}
-        type="file"
-      />
-    </label>
-  );
-}

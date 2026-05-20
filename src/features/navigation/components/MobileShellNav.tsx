@@ -121,23 +121,10 @@ export function MobileShellNav({ userName, userEmail, roleLabel, isAdmin }: Mobi
         {menuOpen ? (
           <div className="mb-4 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
             <MenuLink href="/reports" label="Reports" />
+            {isAdmin ? <MenuLink href={"/templates/forms" as Route} label="Templates" /> : null}
             {isAdmin ? <MenuLink href={"/companies" as Route} label="Companies" /> : null}
             {isAdmin ? <MenuLink href={"/users" as Route} label="Users" /> : null}
             <MenuLink href="/places" label="Places" />
-            <button
-              className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 shadow-sm"
-              type="button"
-            >
-              <span>Reports</span>
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-400">Soon</span>
-            </button>
-            <button
-              className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 shadow-sm"
-              type="button"
-            >
-              <span>Templates</span>
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-400">Soon</span>
-            </button>
             <button
               className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 shadow-sm"
               type="button"

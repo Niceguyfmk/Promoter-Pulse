@@ -12,14 +12,120 @@ import type { Json } from "@/shared/supabase/database.types";
 type ReportSortColumn = "form" | "promoter" | "submitted" | "duration" | "checkin" | "status";
 type ReportSortDirection = "asc" | "desc";
 
-function asRecord(value: Json): Record<string, string> {
+function asRecord(value: Json): Record<string, Json> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return {};
   }
 
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [key, typeof item === "string" ? item : ""])
+  return value as Record<string, Json>;
+}
+
+function flattenAnswerValue(value: Json): string {
+  if (Array.isArray(value)) {
+    return value.map(flattenAnswerValue).join(", ");
+  }
+
+  if (value && typeof value === "object") {
+    if ("content" in value && typeof value.content === "string" && value.content) {
+      return "name" in value && typeof value.name === "string" && value.name ? value.name : "Uploaded file";
+    }
+
+    return Object.entries(value)
+      .map(([key, item]) => `${key}: ${flattenAnswerValue(item as Json)}`)
+      .join(", ");
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  if (value == null) {
+    return "Not provided";
+  }
+
+  return String(value);
+}
+
+type SurveyUploadedAsset = {
+  fieldLabel: string;
+  name: string;
+  url: string;
+};
+
+type ReviewAsset = {
+  label: string;
+  name: string;
+  url: string | undefined;
+};
+
+function isSurveyUploadObject(value: Json): value is { name?: string; content: string } {
+  if (!value || typeof value !== "object" || Array.isArray(value) || !("content" in value)) {
+    return false;
+  }
+
+  return typeof value.content === "string";
+}
+
+function extractSurveyUploadedAssets(entries: Array<[string, Json]>) {
+  const assets: SurveyUploadedAsset[] = [];
+  const nonAssetEntries: Array<[string, Json]> = [];
+
+  for (const [key, value] of entries) {
+    if (Array.isArray(value) && value.every((item) => isSurveyUploadObject(item as Json))) {
+      for (const item of value) {
+        if (isSurveyUploadObject(item) && item.content) {
+          assets.push({
+            fieldLabel: key,
+            name: typeof item.name === "string" && item.name ? item.name : "Uploaded file",
+            url: item.content
+          });
+        }
+      }
+      continue;
+    }
+
+    if (isSurveyUploadObject(value) && value.content) {
+      assets.push({
+        fieldLabel: key,
+        name: typeof value.name === "string" && value.name ? value.name : "Uploaded file",
+        url: value.content
+      });
+      continue;
+    }
+
+    nonAssetEntries.push([key, value]);
+  }
+
+  return { assets, nonAssetEntries };
+}
+
+function isImageAsset(name: string, url?: string) {
+  const candidate = `${name} ${url || ""}`.toLowerCase();
+  return [".png", ".jpg", ".jpeg", ".webp", ".gif", ".heic", ".heif", ".svg"].some((ext) =>
+    candidate.includes(ext)
   );
+}
+
+function reportAnswerEntries(report: VisitReportWithRelations) {
+  const merged = new Map<string, Json>();
+
+  for (const [key, value] of Object.entries(asRecord(report.form_answers))) {
+    merged.set(key, value);
+  }
+
+  for (const [key, value] of Object.entries(asRecord(report.sales_numbers))) {
+    if (!merged.has(key)) {
+      merged.set(key, value);
+    }
+  }
+
+  for (const [key, value] of Object.entries(asRecord(report.merchandising))) {
+    if (!merged.has(key)) {
+      merged.set(key, value);
+    }
+  }
+
+  return Array.from(merged.entries());
 }
 
 function asPhotoItems(value: Json): Array<{ label: string; name: string; size: number; url?: string }> {
@@ -108,17 +214,6 @@ function reportDurationMinutes(startedAt: string, checkedOutAt: string | null) {
 
 function isReportActive(report: VisitReportWithRelations) {
   return report.status === "draft" && !report.checked_out_at;
-}
-
-function answer(record: Record<string, string>, ...keys: string[]) {
-  for (const key of keys) {
-    const value = record[key];
-    if (value) {
-      return value;
-    }
-  }
-
-  return undefined;
 }
 
 type ManagerCheckInStatus = {
@@ -633,10 +728,27 @@ export default async function ReportsPage({
 }
 
 function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
-  const formAnswers = asRecord(report.form_answers);
-  const salesNumbers = asRecord(report.sales_numbers);
-  const merchandising = asRecord(report.merchandising);
+  const { assets: surveyAssets, nonAssetEntries: answerEntries } = extractSurveyUploadedAssets(reportAnswerEntries(report));
   const photoItems = asPhotoItems(report.photo_items);
+  const allAssets: ReviewAsset[] = [
+    ...photoItems.map((item) => ({
+      label: item.label,
+      name: item.name,
+      url: item.url
+    })),
+    ...surveyAssets.map((item) => ({
+      label: item.fieldLabel,
+      name: item.name,
+      url: item.url
+    }))
+  ];
+  const assetsByLabel = new Map<string, ReviewAsset[]>();
+
+  for (const asset of allAssets) {
+    const existing = assetsByLabel.get(asset.label) ?? [];
+    existing.push(asset);
+    assetsByLabel.set(asset.label, existing);
+  }
 
   return (
     <main className="space-y-6 lg:space-y-8">
@@ -644,7 +756,7 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
         Back to reports
       </Link>
       <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_420px] lg:p-6">
+        <div className="space-y-6 p-5 lg:p-6">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill status={report.status} />
@@ -664,51 +776,29 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
             <p className="mt-1 text-sm text-slate-500">
               Hours logged {formatLoggedHours(report.started_at, report.checked_out_at)}
             </p>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <SummaryItem label="Interactions" value={answer(formAnswers, "interactions", "Interactions")} />
-              <SummaryItem label="Demos" value={answer(formAnswers, "demos", "Demos")} />
-              <SummaryItem label="Demos with Photo" value={answer(formAnswers, "demosWithPhoto", "Demos with Photo")} />
-              <SummaryItem label="Core product sales" value={answer(salesNumbers, "coreProducts", "Core product sales", "Daily Sales - Core Products")} />
-              <SummaryItem label="Accessory sales" value={answer(salesNumbers, "accessories", "Accessory sales", "Daily Sales - Accessories")} />
-              <SummaryItem label="Display compliance" value={answer(merchandising, "displayFixtureComplete", "Display compliance", "Merchandising / Display Compliance")} />
-            </div>
-
-            <section className="mt-6 rounded-2xl bg-slate-50/80 p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Photos</p>
-              {photoItems.length > 0 ? (
-                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                  {photoItems.map((item) => (
-                    <li key={`${item.label}-${item.name}`}>
-                      <span className="font-semibold text-slate-800">{item.label}:</span>{" "}
-                      {item.url ? (
-                        <a
-                          className="text-teal-700 underline underline-offset-4"
-                          href={item.url}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          {item.name}
-                        </a>
-                      ) : (
-                        item.name
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm text-slate-500">No photos attached.</p>
-              )}
-            </section>
-
-            {report.note ? (
-              <p className="mt-6 rounded-2xl bg-slate-50/80 p-5 text-sm leading-6 text-slate-600">
-                {report.note}
-              </p>
-            ) : null}
           </div>
 
-          <aside className="rounded-[24px] bg-slate-50/80 p-5">
+          <section className="space-y-3">
+            {answerEntries.length > 0 ? (
+              answerEntries.map(([key, value]) => (
+                <SummaryItem key={key} label={key} value={flattenAnswerValue(value)} />
+              ))
+            ) : (
+              <SummaryItem label="Answers" value="No answers captured" />
+            )}
+
+            {Array.from(assetsByLabel.entries()).map(([label, assets]) => (
+              <AssetAnswerItem assets={assets} key={label} label={label} />
+            ))}
+          </section>
+
+          {report.note ? (
+            <p className="rounded-2xl bg-slate-50/80 p-5 text-sm leading-6 text-slate-600">
+              {report.note}
+            </p>
+          ) : null}
+
+          <section className="rounded-[24px] bg-slate-50/80 p-5">
             {report.status === "submitted" ? (
               <div className="space-y-4">
                 <form action={reviewVisitReportAction} className="space-y-4">
@@ -766,7 +856,7 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
                 </form>
               </div>
             )}
-          </aside>
+          </section>
         </div>
       </article>
     </main>
@@ -794,6 +884,7 @@ function ManagerStatusCard({
     </div>
   );
 }
+
 
 function SortableHeader({
   column,
@@ -852,9 +943,48 @@ function StatusPill({ status }: { status: string }) {
 
 function SummaryItem({ label, value }: { label: string; value: string | undefined }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-3">
+    <div className="rounded-xl border border-slate-200 p-4">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-800">{value || "Not provided"}</p>
+    </div>
+  );
+}
+
+function AssetAnswerItem({ assets, label }: { assets: ReviewAsset[]; label: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <div className="mt-3 space-y-4">
+        {assets.map((asset) =>
+          isImageAsset(asset.name, asset.url) && asset.url ? (
+            <a
+              className="block overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition hover:border-slate-300"
+              href={asset.url}
+              key={`${label}-${asset.name}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <img alt={asset.name} className="max-h-[420px] w-full object-cover" src={asset.url} />
+              <div className="border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">{asset.name}</div>
+            </a>
+          ) : (
+            <div className="text-sm text-slate-700" key={`${label}-${asset.name}`}>
+              {asset.url ? (
+                <a
+                  className="text-teal-700 underline underline-offset-4"
+                  href={asset.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {asset.name}
+                </a>
+              ) : (
+                asset.name
+              )}
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }

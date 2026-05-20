@@ -78,12 +78,14 @@ async function syncPlaceRelations({
   companyId,
   promoterIds,
   representativeIds,
+  surveyFormIds,
   storeId,
   tagNames
 }: {
   companyId: string;
   promoterIds: string[];
   representativeIds: string[];
+  surveyFormIds: string[];
   storeId: string;
   tagNames: string[];
 }) {
@@ -93,6 +95,7 @@ async function syncPlaceRelations({
     admin.from("place_company_assignments").delete().eq("store_id", storeId),
     admin.from("place_representative_assignments").delete().eq("store_id", storeId),
     admin.from("place_promoter_assignments").delete().eq("store_id", storeId),
+    admin.from("place_form_assignments").delete().eq("store_id", storeId),
     admin.from("place_tag_assignments").delete().eq("store_id", storeId)
   ]);
 
@@ -132,6 +135,36 @@ async function syncPlaceRelations({
 
     if (error) {
       throw new AppError("INTERNAL_ERROR", `Failed to assign promoters: ${error.message}`, error);
+    }
+  }
+
+  if (surveyFormIds.length) {
+    const { data: forms, error: formsError } = await admin
+      .from("survey_forms")
+      .select("id")
+      .eq("tenant_id", companyId)
+      .eq("is_active", true)
+      .is("deleted_at", null)
+      .in("id", surveyFormIds);
+
+    if (formsError) {
+      throw new AppError("INTERNAL_ERROR", `Failed to load forms: ${formsError.message}`, formsError);
+    }
+
+    const validFormIds = (forms ?? []).map((form) => form.id);
+    if (validFormIds.length !== surveyFormIds.length) {
+      throw new AppError("VALIDATION_ERROR", "One or more assigned forms are invalid for this company.");
+    }
+
+    const { error } = await admin.from("place_form_assignments").insert(
+      validFormIds.map((formId) => ({
+        store_id: storeId,
+        form_id: formId
+      }))
+    );
+
+    if (error) {
+      throw new AppError("INTERNAL_ERROR", `Failed to assign forms: ${error.message}`, error);
     }
   }
 
@@ -178,6 +211,7 @@ export async function createPlace(formData: FormData) {
   const companyId = (formData.get("companyId") as string | null)?.trim();
   const promoterIds = getAll(formData, "promoterIds");
   const representativeIds = getAll(formData, "representativeIds");
+  const surveyFormIds = getAll(formData, "surveyFormIds");
   const tagNames = getAll(formData, "tagNames");
   const name = nullableString(formData, "name");
 
@@ -228,7 +262,14 @@ export async function createPlace(formData: FormData) {
   }
 
   try {
-    await syncPlaceRelations({ companyId, promoterIds, representativeIds, storeId: store.id, tagNames });
+    await syncPlaceRelations({
+      companyId,
+      promoterIds,
+      representativeIds,
+      surveyFormIds,
+      storeId: store.id,
+      tagNames
+    });
   } catch (error) {
     await admin.from("retail_stores").delete().eq("id", store.id);
     return { error: error instanceof Error ? error.message : "Failed to save place relations." };
@@ -245,6 +286,7 @@ export async function updatePlace(formData: FormData) {
   const companyId = (formData.get("companyId") as string | null)?.trim();
   const promoterIds = getAll(formData, "promoterIds");
   const representativeIds = getAll(formData, "representativeIds");
+  const surveyFormIds = getAll(formData, "surveyFormIds");
   const tagNames = getAll(formData, "tagNames");
   const name = nullableString(formData, "name");
 
@@ -294,7 +336,7 @@ export async function updatePlace(formData: FormData) {
   }
 
   try {
-    await syncPlaceRelations({ companyId, promoterIds, representativeIds, storeId, tagNames });
+    await syncPlaceRelations({ companyId, promoterIds, representativeIds, surveyFormIds, storeId, tagNames });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Failed to save place relations." };
   }
