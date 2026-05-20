@@ -20,6 +20,7 @@ export type VisitReportWithRelations = VisitReportRow & {
     "name" | "address" | "city" | "country" | "latitude" | "longitude" | "allowed_radius_meters"
   > | null;
   users?: Pick<UserRow, "full_name" | "email"> | null;
+  survey_forms?: { schema_json: Json } | null;
 };
 
 export type VisitReportPayload = {
@@ -552,7 +553,8 @@ export class VisitReportService {
       .select(`
         *,
         retail_stores!visit_reports_store_id_fkey(name, address, city, country, latitude, longitude, allowed_radius_meters),
-        users!visit_reports_promoter_user_id_fkey(full_name, email)
+        users!visit_reports_promoter_user_id_fkey(full_name, email),
+        survey_forms!visit_reports_form_id_fkey(schema_json)
       `)
       .eq("id", reportId)
       .is("deleted_at", null);
@@ -601,7 +603,8 @@ export class VisitReportService {
       .select(`
         *,
         retail_stores!visit_reports_store_id_fkey(name, address, city, country, latitude, longitude, allowed_radius_meters),
-        users!visit_reports_promoter_user_id_fkey(full_name, email)
+        users!visit_reports_promoter_user_id_fkey(full_name, email),
+        survey_forms!visit_reports_form_id_fkey(schema_json)
       `)
       .is("deleted_at", null)
       .order("checked_out_at", { ascending: false, nullsFirst: false })

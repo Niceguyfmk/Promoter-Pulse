@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { signOut } from "@/features/auth/server/auth-actions";
+import { FormSubmitButton, LoadingLink } from "@/shared/loading";
 
 type MobileShellNavProps = {
   userName: string;
@@ -133,12 +133,13 @@ export function MobileShellNav({ userName, userEmail, roleLabel, isAdmin }: Mobi
               <span className="text-xs uppercase tracking-[0.16em] text-slate-400">Support</span>
             </button>
             <form action={signOut}>
-              <button
+              <FormSubmitButton
                 className="flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                loadingLabel="Signing out..."
                 type="submit"
               >
                 Sign out
-              </button>
+              </FormSubmitButton>
             </form>
           </div>
         ) : null}
@@ -148,7 +149,7 @@ export function MobileShellNav({ userName, userEmail, roleLabel, isAdmin }: Mobi
             const active = matchesPath(pathname, item.href);
 
             return (
-              <Link
+              <LoadingLink
                 className="flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-2 text-center"
                 href={item.href}
                 key={item.label}
@@ -170,7 +171,7 @@ export function MobileShellNav({ userName, userEmail, roleLabel, isAdmin }: Mobi
                 >
                   {item.label}
                 </span>
-              </Link>
+              </LoadingLink>
             );
           })}
 
@@ -204,7 +205,7 @@ export function MobileShellNav({ userName, userEmail, roleLabel, isAdmin }: Mobi
 
 function MenuLink({ href, label }: { href: Route; label: string }) {
   return (
-    <Link
+    <LoadingLink
       className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm"
       href={href}
     >
@@ -212,6 +213,6 @@ function MenuLink({ href, label }: { href: Route; label: string }) {
       <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
       </svg>
-    </Link>
+    </LoadingLink>
   );
 }

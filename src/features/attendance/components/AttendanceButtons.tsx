@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { checkInAction, checkOutAction } from "../server/attendance-actions";
+import { ButtonLoader, useLoading } from "@/shared/loading";
 
 type Props = {
   shiftId: string;
@@ -13,6 +14,7 @@ export function AttendanceButtons({ shiftId, status }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { beginOperation } = useLoading();
 
   const handleAction = async (type: "in" | "out") => {
     setError(null);
@@ -30,15 +32,23 @@ export function AttendanceButtons({ shiftId, status }: Props) {
         formData.append("longitude", position.coords.longitude.toString());
 
         startTransition(async () => {
-          const result = type === "in" 
-            ? await checkInAction(formData) 
-            : await checkOutAction(formData);
-          
-          if (result.error) {
-            setError(result.error);
-            return;
+          const end = beginOperation({
+            kind: "mutation",
+            label: type === "in" ? "Checking in" : "Checking out"
+          });
+          try {
+            const result = type === "in"
+              ? await checkInAction(formData)
+              : await checkOutAction(formData);
+
+            if (result.error) {
+              setError(result.error);
+              return;
+            }
+            router.refresh();
+          } finally {
+            end();
           }
-          router.refresh();
         });
       },
       (err) => {
@@ -65,7 +75,7 @@ export function AttendanceButtons({ shiftId, status }: Props) {
           disabled={isPending}
           className="flex h-12 w-full items-center justify-center rounded-xl bg-cyan-900 px-4 text-base font-bold text-white transition-all hover:bg-cyan-950 active:scale-[0.98] disabled:opacity-70"
         >
-          {isPending ? "Checking in..." : "Check in"}
+          <ButtonLoader label="Check in" loading={isPending} loadingLabel="Checking in..." />
         </button>
       )}
 
@@ -75,7 +85,7 @@ export function AttendanceButtons({ shiftId, status }: Props) {
           disabled={isPending}
           className="flex h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-base font-bold text-white transition-all hover:bg-slate-950 active:scale-[0.98] disabled:opacity-70"
         >
-          {isPending ? "Checking out..." : "Check out"}
+          <ButtonLoader label="Check out" loading={isPending} loadingLabel="Checking out..." />
         </button>
       )}
     </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { parseGoogleMapsCoordinates } from "../lib/google-maps-coordinates";
+import { FormSubmitButton, LoadingLink } from "@/shared/loading";
 
 export type CompanyOption = { id: string; name: string };
 export type RepresentativeOption = { id: string; name: string; email: string; tenantId: string };
@@ -400,18 +400,19 @@ export function PlaceForm({
       </section>
 
       <div className="flex items-center justify-end gap-3">
-        <Link
+        <LoadingLink
           className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           href="/places"
         >
           Discard
-        </Link>
-        <button
+        </LoadingLink>
+        <FormSubmitButton
           className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700"
+          loadingLabel={initialValue?.id ? "Saving..." : "Creating..."}
           type="submit"
         >
           {submitLabel}
-        </button>
+        </FormSubmitButton>
       </div>
     </form>
   );

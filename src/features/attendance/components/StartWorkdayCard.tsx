@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { LoadingLink as Link } from "@/shared/loading";
+import type { Route } from "next";
 import { useEffect, useState } from "react";
 import type { ActiveWorkflowVisit } from "@/features/attendance/server/attendance-service";
 
@@ -33,17 +34,19 @@ export function StartWorkdayCard({ activeWorkflow }: { activeWorkflow: ActiveWor
         <div className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-lg font-medium text-slate-800 sm:text-xl">Good Morning !</h1>
-            <button
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-600"
-              onClick={() => setOpen(true)}
-              type="button"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8" strokeWidth="1.8" />
-                <path d="M12 8v5l3 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-              </svg>
-              Start workflow
-            </button>
+            {!activeWorkflow ? (
+              <button
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-teal-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-600"
+                onClick={() => setOpen(true)}
+                type="button"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="8" strokeWidth="1.8" />
+                  <path d="M12 8v5l3 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                </svg>
+                Start workflow
+              </button>
+            ) : null}
           </div>
 
           {activeWorkflow ? (
@@ -58,7 +61,7 @@ export function StartWorkdayCard({ activeWorkflow }: { activeWorkflow: ActiveWor
               </div>
               <Link
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-950"
-                href={`/places/${activeWorkflow.store_id}`}
+                href={`/places/${activeWorkflow.store_id}` as Route}
               >
                 Check out
               </Link>

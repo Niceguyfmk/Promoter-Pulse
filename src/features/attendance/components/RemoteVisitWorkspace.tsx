@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import type { Json } from "@/shared/supabase/database.types";
 import type { VisitReportRow } from "@/features/attendance/server/visit-report-service";
 import { saveVisitReportAction } from "@/features/attendance/server/visit-report-actions";
 import { AssignedSurveyForm, type AssignedFormOption } from "@/features/forms/components/AssignedSurveyForm";
+import { ButtonLoader, LoadingLink } from "@/shared/loading";
 
 type Store = {
   id: string;
@@ -49,6 +49,7 @@ export function RemoteVisitWorkspace({
   const [currentAnswers, setCurrentAnswers] = useState<Record<string, Json>>(formAnswers);
   const [currentFormId, setCurrentFormId] = useState(initialFormId);
   const [currentFormName, setCurrentFormName] = useState(initialFormName);
+  const [pendingIntent, setPendingIntent] = useState<"save" | "submit" | null>(null);
 
   const handleFormChange = (formId: string, formName: string, answers: Record<string, Json>) => {
     setCurrentFormId(formId);
@@ -61,11 +62,11 @@ export function RemoteVisitWorkspace({
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="relative min-h-[210px] bg-[linear-gradient(rgba(15,23,42,0.58),rgba(15,23,42,0.5)),url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center">
           <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-7">
-            <Link className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white backdrop-blur" href="/places">
+            <LoadingLink className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white backdrop-blur" href="/places">
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path d="M15 18 9 12l6-6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
               </svg>
-            </Link>
+            </LoadingLink>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-100">Remote check-in</p>
               <h1 className="mt-2 text-2xl font-bold text-white sm:text-4xl">{store.name}</h1>
@@ -95,7 +96,10 @@ export function RemoteVisitWorkspace({
         </div>
       </section>
 
-      <form action={saveVisitReportAction} className="hidden" id={visitFormId}>
+      <form action={saveVisitReportAction} className="hidden" id={visitFormId} onSubmit={(event) => {
+        const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+        setPendingIntent(submitter?.value === "submit" ? "submit" : "save");
+      }}>
         <input name="reportId" type="hidden" value={report.id} />
         <input name="storeId" type="hidden" value={store.id} />
         <input name="formAnswersJson" type="hidden" value={JSON.stringify(currentAnswers)} />
@@ -128,18 +132,23 @@ export function RemoteVisitWorkspace({
             name="intent"
             type="submit"
             value="save"
+            disabled={pendingIntent !== null}
           >
-            Save progress
+            <ButtonLoader label="Save progress" loading={pendingIntent === "save"} loadingLabel="Saving..." />
           </button>
           <button
             className={`h-12 w-full rounded-xl px-4 text-sm font-bold text-white shadow-sm transition ${hasSavedForm ? "bg-red-500 hover:bg-red-600" : "bg-red-300 cursor-not-allowed"}`}
-            disabled={!hasSavedForm}
+            disabled={!hasSavedForm || pendingIntent !== null}
             form={visitFormId}
             name="intent"
             type="submit"
             value="submit"
           >
-            {hasSavedForm ? "Check out & submit" : "Save a form first"}
+            <ButtonLoader
+              label={hasSavedForm ? "Check out & submit" : "Save a form first"}
+              loading={pendingIntent === "submit"}
+              loadingLabel="Submitting..."
+            />
           </button>
         </aside>
       </div>
@@ -192,4 +201,3 @@ function VisitTimer({
     </section>
   );
 }
-

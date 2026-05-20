@@ -8,6 +8,7 @@ import {
   type AssignedPlaceLocation
 } from "../lib/gps-validation";
 import { requestOneTimeGpsPosition, type GpsPermissionState } from "../services/gps-check-in-service";
+import { ButtonLoader, useLoading } from "@/shared/loading";
 
 type Props = {
   storeId: string;
@@ -22,6 +23,7 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
   const [permissionState, setPermissionState] = useState<GpsPermissionState>("idle");
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const { beginOperation } = useLoading();
 
   const canVerifyLocation = storeLocation.latitude != null && storeLocation.longitude != null;
   const isLoading = permissionState === "requesting" || isPending;
@@ -35,6 +37,7 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
     }
 
     setPermissionState("requesting");
+    const endGpsOperation = beginOperation({ kind: "background", label: "Reading GPS" });
 
     let position;
     try {
@@ -44,8 +47,10 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
       const errorMessage = error instanceof Error ? error.message : "Unable to read your current location. Please retry.";
       setPermissionState(errorMessage.toLowerCase().includes("denied") ? "permission-denied" : "unsupported");
       setMessage(errorMessage);
+      endGpsOperation();
       return;
     }
+    endGpsOperation();
 
     const validation = validateGpsCheckIn(position, storeLocation as AssignedPlaceLocation);
     if (!validation.allowed) {
@@ -61,9 +66,14 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
     formData.append("timestamp", position.timestamp);
 
     startTransition(async () => {
-      const result = await startGpsCheckInAction(formData);
-      if (result?.error) {
-        setMessage(result.error);
+      const end = beginOperation({ kind: "mutation", label: "Verifying GPS" });
+      try {
+        const result = await startGpsCheckInAction(formData);
+        if (result?.error) {
+          setMessage(result.error);
+        }
+      } finally {
+        end();
       }
     });
   }
@@ -76,7 +86,7 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
         onClick={handleCheckIn}
         type="button"
       >
-        {isLoading ? "Verifying GPS..." : "Check in"}
+        <ButtonLoader label="Check in" loading={isLoading} loadingLabel="Verifying GPS..." />
       </button>
       {message ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-800">

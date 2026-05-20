@@ -7,6 +7,7 @@ import {
   updateCompanyActiveStatusFromCompaniesPage,
   updateCompanyFromCompaniesPage
 } from "./companies-page-actions";
+import { FormSubmitButton } from "@/shared/loading";
 
 export type CompanyTableRow = {
   id: string;
@@ -122,18 +123,19 @@ export function CompaniesTable({
                   name="name"
                   required
                 />
-                <button
+                <FormSubmitButton
                   className="min-h-11 rounded-2xl bg-slate-100 px-4 text-sm font-semibold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-900"
+                  loadingLabel="Saving..."
                   type="submit"
                 >
                   Save
-                </button>
+                </FormSubmitButton>
               </form>
 
               <form action={updateCompanyActiveStatusFromCompaniesPage}>
                 <input name="companyId" type="hidden" value={company.id} />
                 <input name="isActive" type="hidden" value={String(!company.isActive)} />
-                <button
+                <FormSubmitButton
                   className={[
                     "min-h-10 rounded-2xl px-4 text-xs font-semibold uppercase tracking-[0.16em] transition",
                     company.isActive
@@ -141,10 +143,11 @@ export function CompaniesTable({
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                   ].join(" ")}
                   disabled={company.id === currentCompanyId}
+                  loadingLabel="Updating..."
                   type="submit"
                 >
                   {company.isActive ? "Active" : "Inactive"}
-                </button>
+                </FormSubmitButton>
               </form>
 
               <div className="min-w-0">
@@ -167,12 +170,13 @@ export function CompaniesTable({
                 {company.id !== currentCompanyId ? (
                   <form action={deleteCompanyFromCompaniesPage}>
                     <input name="companyId" type="hidden" value={company.id} />
-                    <button
+                    <FormSubmitButton
                       className="min-h-11 rounded-2xl bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                      loadingLabel="Deleting..."
                       type="submit"
                     >
                       Delete
-                    </button>
+                    </FormSubmitButton>
                   </form>
                 ) : null}
               </div>

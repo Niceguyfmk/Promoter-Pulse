@@ -49,3 +49,46 @@ export function normalizeSurveyAnswers(value: unknown): Record<string, Json> {
 
   return value as Record<string, Json>;
 }
+
+export function extractSurveyLabels(schema: Json): Record<string, string> {
+  const labels: Record<string, string> = {};
+
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+    return labels;
+  }
+
+  function traverse(obj: unknown) {
+    if (!obj || typeof obj !== "object") return;
+
+    if (Array.isArray(obj)) {
+      obj.forEach(traverse);
+      return;
+    }
+
+    const rec = obj as Record<string, unknown>;
+    if (typeof rec.name === "string" && rec.name) {
+      if (typeof rec.title === "string" && rec.title.trim()) {
+        labels[rec.name] = rec.title.trim();
+      } else if (
+        rec.title &&
+        typeof rec.title === "object" &&
+        !Array.isArray(rec.title) &&
+        "default" in rec.title &&
+        typeof rec.title.default === "string"
+      ) {
+        labels[rec.name] = rec.title.default.trim();
+      } else {
+        labels[rec.name] = rec.name; // Fallback to name if no title
+      }
+    }
+
+    for (const value of Object.values(rec)) {
+      if (value && typeof value === "object") {
+        traverse(value);
+      }
+    }
+  }
+
+  traverse(schema);
+  return labels;
+}

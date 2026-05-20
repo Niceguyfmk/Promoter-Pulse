@@ -4,11 +4,13 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 // Note: We'll use a client action or direct supabase call here since it's a password update
 import { createSupabaseBrowserClient } from "@/shared/supabase/client";
+import { ButtonLoader, useLoading } from "@/shared/loading";
 
 export default function SetPasswordPage() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { startRouteTransition } = useLoading();
 
 
 
@@ -35,6 +37,7 @@ export default function SetPasswordPage() {
         setError(updateError.message);
       } else {
         // Success! Redirect to the dashboard
+        startRouteTransition("Loading dashboard");
         router.push("/");
       }
     });
@@ -93,17 +96,7 @@ export default function SetPasswordPage() {
           type="submit"
           disabled={isPending}
         >
-          {isPending ? (
-            <span className="flex items-center gap-2">
-              <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Saving password...
-            </span>
-          ) : (
-            "Activate Account"
-          )}
+          <ButtonLoader label="Activate Account" loading={isPending} loadingLabel="Saving password..." />
         </button>
       </form>
     </section>

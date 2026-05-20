@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Route } from "next";
 
 import { createAuthService } from "@/features/auth/server/app-auth-service";
@@ -8,6 +7,8 @@ import {
 } from "@/features/attendance/server/visit-report-service";
 import { deleteVisitReportAction, reviewVisitReportAction } from "@/features/attendance/server/visit-report-actions";
 import type { Json } from "@/shared/supabase/database.types";
+import { extractSurveyLabels } from "@/features/forms/lib/survey-schema";
+import { FormSubmitButton, LoadingLink as Link } from "@/shared/loading";
 
 type ReportSortColumn = "form" | "promoter" | "submitted" | "duration" | "checkin" | "status";
 type ReportSortDirection = "asc" | "desc";
@@ -501,9 +502,9 @@ export default async function ReportsPage({
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
           </select>
-          <button className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white" type="submit">
+          <FormSubmitButton className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white" loadingLabel="Filtering..." type="submit">
             Filter
-          </button>
+          </FormSubmitButton>
         </form>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -546,7 +547,7 @@ export default async function ReportsPage({
                         {report.status === "rejected" ? (
                           <Link
                             className="inline-flex h-10 items-center rounded-xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700"
-                            href={`/places/${report.store_id}?reportId=${report.id}`}
+                            href={`/places/${report.store_id}?reportId=${report.id}` as Route}
                           >
                             Edit
                           </Link>
@@ -670,9 +671,9 @@ export default async function ReportsPage({
           <option value="accepted">Accepted</option>
           <option value="rejected">Rejected</option>
         </select>
-        <button className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white" type="submit">
+        <FormSubmitButton className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white" loadingLabel="Filtering..." type="submit">
           Filter
-        </button>
+        </FormSubmitButton>
       </form>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -729,6 +730,8 @@ export default async function ReportsPage({
 
 function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
   const { assets: surveyAssets, nonAssetEntries: answerEntries } = extractSurveyUploadedAssets(reportAnswerEntries(report));
+  const schemaLabels = extractSurveyLabels(report.survey_forms?.schema_json ?? {});
+
   const photoItems = asPhotoItems(report.photo_items);
   const allAssets: ReviewAsset[] = [
     ...photoItems.map((item) => ({
@@ -737,7 +740,7 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
       url: item.url
     })),
     ...surveyAssets.map((item) => ({
-      label: item.fieldLabel,
+      label: schemaLabels[item.fieldLabel] || item.fieldLabel,
       name: item.name,
       url: item.url
     }))
@@ -781,7 +784,7 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
           <section className="space-y-3">
             {answerEntries.length > 0 ? (
               answerEntries.map(([key, value]) => (
-                <SummaryItem key={key} label={key} value={flattenAnswerValue(value)} />
+                <SummaryItem key={key} label={schemaLabels[key] || key} value={flattenAnswerValue(value)} />
               ))
             ) : (
               <SummaryItem label="Answers" value="No answers captured" />
@@ -809,32 +812,35 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
                     placeholder="Manager review note"
                   />
                   <div className="grid grid-cols-2 gap-3">
-                    <button
+                    <FormSubmitButton
                       className="h-12 rounded-xl bg-red-50 text-sm font-bold text-red-700 transition hover:bg-red-100"
+                      loadingLabel="Rejecting..."
                       name="status"
                       type="submit"
                       value="rejected"
                     >
                       Reject
-                    </button>
-                    <button
+                    </FormSubmitButton>
+                    <FormSubmitButton
                       className="h-12 rounded-xl bg-teal-600 text-sm font-bold text-white transition hover:bg-teal-700"
+                      loadingLabel="Accepting..."
                       name="status"
                       type="submit"
                       value="accepted"
                     >
                       Accept
-                    </button>
+                    </FormSubmitButton>
                   </div>
                 </form>
                 <form action={deleteVisitReportAction}>
                   <input name="reportId" type="hidden" value={report.id} />
-                  <button
+                  <FormSubmitButton
                     className="h-12 w-full rounded-xl border border-red-200 bg-white text-sm font-bold text-red-700 transition hover:bg-red-50"
+                    loadingLabel="Deleting..."
                     type="submit"
                   >
                     Delete report
-                  </button>
+                  </FormSubmitButton>
                 </form>
               </div>
             ) : (
@@ -847,12 +853,13 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
                 </div>
                 <form action={deleteVisitReportAction}>
                   <input name="reportId" type="hidden" value={report.id} />
-                  <button
+                  <FormSubmitButton
                     className="h-12 w-full rounded-xl border border-red-200 bg-white text-sm font-bold text-red-700 transition hover:bg-red-50"
+                    loadingLabel="Deleting..."
                     type="submit"
                   >
                     Delete report
-                  </button>
+                  </FormSubmitButton>
                 </form>
               </div>
             )}
@@ -954,18 +961,18 @@ function AssetAnswerItem({ assets, label }: { assets: ReviewAsset[]; label: stri
   return (
     <div className="rounded-xl border border-slate-200 p-4">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <div className="mt-3 space-y-4">
+      <div className="mt-3 flex flex-wrap gap-4">
         {assets.map((asset) =>
           isImageAsset(asset.name, asset.url) && asset.url ? (
             <a
-              className="block overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition hover:border-slate-300"
+              className="block w-[250px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition hover:border-slate-300 shrink-0"
               href={asset.url}
               key={`${label}-${asset.name}`}
               rel="noreferrer"
               target="_blank"
             >
-              <img alt={asset.name} className="max-h-[420px] w-full object-cover" src={asset.url} />
-              <div className="border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">{asset.name}</div>
+              <img alt={asset.name} className="h-48 w-full object-cover" src={asset.url} />
+              <div className="truncate border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">{asset.name}</div>
             </a>
           ) : (
             <div className="text-sm text-slate-700" key={`${label}-${asset.name}`}>

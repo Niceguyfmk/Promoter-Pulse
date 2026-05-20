@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LoadingLink as Link } from "@/shared/loading";
 import { useSearchParams } from "next/navigation";
 
 export function PromoterTabs() {

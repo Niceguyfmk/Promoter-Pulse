@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { Model } from "survey-core";
 import { Survey } from "survey-react-ui";
 import { promoterPulseTheme } from "../lib/theme";
@@ -17,11 +17,11 @@ export function SurveyPreview({
   readOnly?: boolean;
   schema: Json;
 }) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
 
   const model = useMemo(() => {
     const next = new Model(schema);

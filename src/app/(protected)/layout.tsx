@@ -5,6 +5,7 @@ import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { signOut } from "@/features/auth/server/auth-actions";
 import { MobileShellNav } from "@/features/navigation/components/MobileShellNav";
 import { adminNav, managerNav, primaryNav, ShellNav } from "@/features/navigation/components/ShellNav";
+import { FormSubmitButton } from "@/shared/loading";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const session = await createAuthService().getSession();
@@ -73,8 +74,9 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
                 </button>
 
                 <form action={signOut}>
-                  <button
+                  <FormSubmitButton
                     className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+                    loadingLabel="..."
                     title="Sign out"
                     type="submit"
                   >
@@ -86,7 +88,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
                         strokeWidth="1.8"
                       />
                     </svg>
-                  </button>
+                  </FormSubmitButton>
                 </form>
               </div>
             </div>

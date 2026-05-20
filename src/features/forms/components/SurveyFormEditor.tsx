@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { SurveyPreview } from "./SurveyPreview";
 import { parseSurveySchemaText, surveySchemaText } from "../lib/survey-schema";
 import type { Json } from "@/shared/supabase/database.types";
+import { FormSubmitButton } from "@/shared/loading";
 
 const EMPTY_SURVEY_SCHEMA = {
   title: "New Form",
@@ -116,12 +117,13 @@ export function SurveyFormEditor({
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          <button
+          <FormSubmitButton
             className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            loadingLabel={initialValue?.id ? "Saving..." : "Creating..."}
             type="submit"
           >
             {initialValue?.id ? "Save form" : "Create form"}
-          </button>
+          </FormSubmitButton>
         </div>
       </form>
 

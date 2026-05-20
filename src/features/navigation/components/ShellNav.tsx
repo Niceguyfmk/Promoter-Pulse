@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 import type { Route } from "next";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LoadingLink } from "@/shared/loading";
 
 export type NavItem = {
   children?: Array<{ href: Route; label: string }>;
@@ -165,7 +165,7 @@ export function ShellNav({ items }: { items: NavItem[] }) {
                 </svg>
               </div>
             ) : (
-              <Link
+              <LoadingLink
                 className={[
                   "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition",
                   active
@@ -186,13 +186,13 @@ export function ShellNav({ items }: { items: NavItem[] }) {
                 </span>
                 <span className="flex-1 text-left">{item.label}</span>
                 {active ? <div className="h-1.5 w-1.5 rounded-full bg-cyan-600" /> : null}
-              </Link>
+              </LoadingLink>
             )}
 
             {hasChildren ? (
               <div className="invisible absolute left-full top-0 z-30 ml-3 min-w-[200px] translate-x-2 rounded-2xl border border-slate-200 bg-white p-2 opacity-0 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.35)] transition-all group-hover:visible group-hover:translate-x-0 group-hover:opacity-100">
                 {item.children?.map((child) => (
-                  <Link
+                  <LoadingLink
                     className={[
                       "block rounded-xl px-4 py-3 text-sm font-medium transition",
                       pathname.startsWith(child.href)
@@ -203,7 +203,7 @@ export function ShellNav({ items }: { items: NavItem[] }) {
                     key={child.label}
                   >
                     {child.label}
-                  </Link>
+                  </LoadingLink>
                 ))}
               </div>
             ) : null}

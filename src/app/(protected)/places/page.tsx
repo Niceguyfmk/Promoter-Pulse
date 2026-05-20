@@ -2,7 +2,7 @@ import { createAttendanceService } from "@/features/attendance/server/attendance
 import { StoreCard } from "@/features/attendance/components/StoreCard";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { updatePlaceActiveStatus } from "@/features/places/server/place-actions";
-import Link from "next/link";
+import { LoadingLink as Link } from "@/shared/loading";
 
 async function updatePlaceActiveStatusFromPage(formData: FormData) {
   "use server";

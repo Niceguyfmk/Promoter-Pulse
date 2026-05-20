@@ -1,8 +1,8 @@
 import type { Database } from "@/shared/supabase/database.types";
 import type { Route } from "next";
-import Link from "next/link";
 import { GpsCheckInButton } from "./GpsCheckInButton";
 import { RemoteCheckInForm } from "./RemoteCheckInForm";
+import { FormSubmitButton, LoadingLink } from "@/shared/loading";
 
 type StoreRow = Database["public"]["Tables"]["retail_stores"]["Row"];
 
@@ -37,22 +37,23 @@ export function StoreCard({ canManage, store, toggleAction }: Props) {
         <div className="mt-6 border-t border-slate-50 pt-4">
           {canManage ? (
             <div className="mb-4 flex items-center gap-2">
-              <Link
+              <LoadingLink
                 className="flex-1 rounded-2xl bg-slate-100 px-4 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-900"
                 href={`/places/${store.id}/edit` as Route}
               >
                 Edit
-              </Link>
+              </LoadingLink>
               {toggleAction ? (
                 <form action={toggleAction} className="flex-1">
                   <input name="storeId" type="hidden" value={store.id} />
                   <input name="isActive" type="hidden" value={String(!store.is_active)} />
-                  <button
+                  <FormSubmitButton
                     className="w-full rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                    loadingLabel={store.is_active ? "Deactivating..." : "Activating..."}
                     type="submit"
                   >
                     {store.is_active ? "Deactivate" : "Activate"}
-                  </button>
+                  </FormSubmitButton>
                 </form>
               ) : null}
             </div>

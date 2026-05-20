@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LoadingLink as Link } from "@/shared/loading";
 import type { Route } from "next";
 import { redirect } from "next/navigation";
 

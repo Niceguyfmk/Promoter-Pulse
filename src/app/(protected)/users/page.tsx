@@ -5,6 +5,7 @@ import { inviteUser } from "@/features/auth/server/auth-actions";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { createSupabaseAdminClient } from "@/shared/supabase/server";
 import { UsersTable, type UsersTableRow } from "./UsersTable";
+import { FormSubmitButton } from "@/shared/loading";
 
 async function inviteUserFromPage(formData: FormData) {
   "use server";
@@ -109,12 +110,13 @@ export default async function UsersPage() {
             placeholder="Company"
             required
           />
-          <button
+          <FormSubmitButton
             className="min-h-12 rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-cyan-950"
+            loadingLabel="Sending..."
             type="submit"
           >
             Send invite
-          </button>
+          </FormSubmitButton>
         </form>
       </section>
 

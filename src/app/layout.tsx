@@ -7,6 +7,7 @@ import "./globals.css";
 import { QueryProvider } from "@/shared/providers/query-provider";
 import { ServiceWorkerRegistration } from "@/shared/pwa/service-worker-registration";
 import { DisableNumberScroll } from "@/shared/components/DisableNumberScroll";
+import { LoadingProvider, LoadingShell } from "@/shared/loading";
 
 export const metadata: Metadata = {
   title: "Promoter Pulse",
@@ -31,9 +32,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <QueryProvider>
-          {children}
-          <ServiceWorkerRegistration />
-          <DisableNumberScroll />
+          <LoadingProvider>
+            <LoadingShell>
+              {children}
+              <ServiceWorkerRegistration />
+              <DisableNumberScroll />
+            </LoadingShell>
+          </LoadingProvider>
         </QueryProvider>
       </body>
     </html>

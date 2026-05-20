@@ -8,6 +8,7 @@ import {
   updateUserActiveStatusFromUsersPage,
   updateUserRoleFromUsersPage
 } from "./users-page-actions";
+import { FormSubmitButton } from "@/shared/loading";
 
 export type UsersTableRow = {
   id: string;
@@ -151,7 +152,7 @@ export function UsersTable({
               <form action={updateUserActiveStatusFromUsersPage}>
                 <input name="userId" type="hidden" value={user.id} />
                 <input name="isActive" type="hidden" value={String(!user.isActive)} />
-                <button
+                <FormSubmitButton
                   className={[
                     "min-h-10 rounded-2xl px-4 text-xs font-semibold uppercase tracking-[0.16em] transition",
                     user.isActive
@@ -159,10 +160,11 @@ export function UsersTable({
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                   ].join(" ")}
                   disabled={user.id === currentUserId}
+                  loadingLabel="Updating..."
                   type="submit"
                 >
                   {user.isActive ? "Active" : "Inactive"}
-                </button>
+                </FormSubmitButton>
               </form>
               <div className="flex flex-wrap items-center gap-2">
                 <form action={updateUserRoleFromUsersPage} className="flex items-center gap-2">
@@ -178,22 +180,24 @@ export function UsersTable({
                       </option>
                     ))}
                   </select>
-                  <button
+                  <FormSubmitButton
                     className="min-h-11 rounded-2xl bg-slate-100 px-4 text-sm font-semibold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-900"
+                    loadingLabel="Saving..."
                     type="submit"
                   >
                     Save
-                  </button>
+                  </FormSubmitButton>
                 </form>
                 {user.id !== currentUserId ? (
                   <form action={deleteUserFromUsersPage}>
                     <input name="userId" type="hidden" value={user.id} />
-                    <button
+                    <FormSubmitButton
                       className="min-h-11 rounded-2xl bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                      loadingLabel="Deleting..."
                       type="submit"
                     >
                       Delete
-                    </button>
+                    </FormSubmitButton>
                   </form>
                 ) : null}
               </div>

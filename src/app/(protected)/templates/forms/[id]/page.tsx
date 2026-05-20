@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FormSubmitButton, LoadingLink as Link } from "@/shared/loading";
 import type { Route } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -36,12 +36,13 @@ export default async function EditTemplateFormPage({
 
         <form action={deleteSurveyFormAction}>
           <input name="formId" type="hidden" value={form.id} />
-          <button
+          <FormSubmitButton
             className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-sm font-bold text-red-700 transition hover:bg-red-50"
+            loadingLabel="Deleting..."
             type="submit"
           >
             Delete form
-          </button>
+          </FormSubmitButton>
         </form>
       </div>
 

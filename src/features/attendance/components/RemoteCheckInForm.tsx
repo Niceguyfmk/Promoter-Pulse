@@ -7,6 +7,7 @@ import {
   startRemoteCheckInFormAction,
   type RemoteCheckInState
 } from "@/features/attendance/server/visit-report-actions";
+import { ButtonLoader } from "@/shared/loading";
 
 const initialState: RemoteCheckInState = { error: null };
 
@@ -35,7 +36,7 @@ function SubmitButton() {
       disabled={pending}
       type="submit"
     >
-      {pending ? "Starting..." : "Remote check in"}
+      <ButtonLoader label="Remote check in" loading={pending} loadingLabel="Starting..." />
     </button>
   );
 }
