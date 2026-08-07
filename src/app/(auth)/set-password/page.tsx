@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 // Note: We'll use a client action or direct supabase call here since it's a password update
 import { createSupabaseBrowserClient } from "@/shared/supabase/client";
@@ -11,8 +11,44 @@ export default function SetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { startRouteTransition } = useLoading();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [isSessionReady, setIsSessionReady] = useState(false);
 
+  useEffect(() => {
+    let mounted = true;
 
+    const checkSession = async () => {
+      const {
+        data: { session },
+        error: sessionError
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (sessionError || !session) {
+        setError("This password link is invalid or has expired. Request a new reset link.");
+        return;
+      }
+
+      setIsSessionReady(true);
+    };
+
+    void checkSession();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted && session) {
+        setError(null);
+        setIsSessionReady(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   async function handleSubmit(formData: FormData) {
     const password = formData.get("password") as string;
@@ -27,8 +63,6 @@ export default function SetPasswordPage() {
     startTransition(async () => {
       // For password updates after clicking a link, we use the client-side session
       // that was automatically established by the redirect
-      const supabase = createSupabaseBrowserClient();
-
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
@@ -48,7 +82,7 @@ export default function SetPasswordPage() {
       <div className="mb-8 text-center sm:text-left">
         <p className="text-sm font-bold uppercase tracking-widest text-cyan-600">Secure Access</p>
         <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-slate-950">Set your password</h1>
-        <p className="mt-2 text-slate-600">Choose a strong password to activate your account.</p>
+        <p className="mt-2 text-slate-600">Choose a strong new password for your account.</p>
       </div>
 
       <form 
@@ -72,7 +106,7 @@ export default function SetPasswordPage() {
             type="password"
             placeholder="••••••••"
             required
-            disabled={isPending}
+            disabled={isPending || !isSessionReady}
           />
         </div>
 
@@ -87,16 +121,20 @@ export default function SetPasswordPage() {
             type="password"
             placeholder="••••••••"
             required
-            disabled={isPending}
+            disabled={isPending || !isSessionReady}
           />
         </div>
 
         <button
           className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-xl bg-cyan-900 px-4 text-base font-bold text-white transition-all hover:bg-cyan-950 active:scale-[0.98] disabled:opacity-70"
           type="submit"
-          disabled={isPending}
+          disabled={isPending || !isSessionReady}
         >
-          <ButtonLoader label="Activate Account" loading={isPending} loadingLabel="Saving password..." />
+          <ButtonLoader
+            label={isSessionReady ? "Update Password" : "Validating link..."}
+            loading={isPending}
+            loadingLabel="Saving password..."
+          />
         </button>
       </form>
     </section>

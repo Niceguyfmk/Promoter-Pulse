@@ -18,6 +18,14 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-request-id", requestHeaders.get("x-request-id") ?? crypto.randomUUID());
 
+  // Older Supabase configuration used `/*` as the Site URL. Recovery links
+  // generated with that value land on a literal `/*` path with the session in
+  // the URL fragment. Redirect it to the password form; browsers carry the
+  // fragment across this redirect so the Supabase browser client can consume it.
+  if (request.nextUrl.pathname === "/*") {
+    return NextResponse.redirect(new URL("/set-password", request.url));
+  }
+
   if (isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.next({
       request: {
