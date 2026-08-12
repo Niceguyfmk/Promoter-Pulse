@@ -54,35 +54,41 @@ export class ScheduleService {
     const isAdmin = session.roles.includes("admin");
     const isManager = session.roles.includes("manager");
     const viewerScope = isAdmin ? "admin" : isManager ? "manager" : "promoter";
-    const supabase = isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
+    const supabase =
+      isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
     const start = rangeStart.toISOString();
     const end = rangeEnd.toISOString();
 
+    // Only the columns mapShiftToEvent/mapVisitToEvent/hasMatchingShift actually
+    // read — drop the heavy visit_reports jsonb columns (form_answers,
+    // photo_items, sales_numbers, merchandising) that the calendar never renders.
     let shiftsQuery = supabase
       .from("shifts")
       .select(
         `
-        *,
+        id, tenant_id, promoter_user_id, store_id, scheduled_start_at, scheduled_end_at, status,
         retail_stores(name, address)
       `
       )
       .is("deleted_at", null)
       .gte("scheduled_start_at", start)
       .lt("scheduled_start_at", end)
-      .order("scheduled_start_at", { ascending: true });
+      .order("scheduled_start_at", { ascending: true })
+      .limit(500);
 
     let visitsQuery = supabase
       .from("visit_reports")
       .select(
         `
-        *,
+        id, tenant_id, promoter_user_id, store_id, form_name, started_at, checked_out_at,
         retail_stores!visit_reports_store_id_fkey(name, address)
       `
       )
       .is("deleted_at", null)
       .gte("started_at", start)
       .lt("started_at", end)
-      .order("started_at", { ascending: true });
+      .order("started_at", { ascending: true })
+      .limit(500);
 
     if (isManager || !isAdmin) {
       shiftsQuery = shiftsQuery.eq("tenant_id", session.user.tenantId);
@@ -94,14 +100,15 @@ export class ScheduleService {
       visitsQuery = visitsQuery.eq("promoter_user_id", session.user.id);
     }
 
-    const [{ data: shifts, error: shiftsError }, { data: visits, error: visitsError }] = await Promise.all([
-      shiftsQuery,
-      visitsQuery
-    ]);
+    const [{ data: shifts, error: shiftsError }, { data: visits, error: visitsError }] =
+      await Promise.all([shiftsQuery, visitsQuery]);
 
     const error = shiftsError || visitsError;
     if (error) {
-      console.error("[ScheduleService] Failed to fetch calendar events:", serializeSupabaseError(error));
+      console.error(
+        "[ScheduleService] Failed to fetch calendar events:",
+        serializeSupabaseError(error)
+      );
       throw new AppError("INTERNAL_ERROR", "Failed to fetch schedule events", error);
     }
 
@@ -125,7 +132,9 @@ export class ScheduleService {
       events: [
         ...shiftRows.map((shift) => mapShiftToEvent(shift, promoterNames)),
         ...unplannedVisits.map((visit) => mapVisitToEvent(visit, promoterNames))
-      ].sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()),
+      ].sort(
+        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+      ),
       rangeEnd: end,
       rangeStart: start,
       viewerScope
@@ -162,7 +171,10 @@ export class ScheduleService {
       .in("id", promoterIds);
 
     if (error) {
-      console.error("[ScheduleService] Failed to fetch promoter names:", serializeSupabaseError(error));
+      console.error(
+        "[ScheduleService] Failed to fetch promoter names:",
+        serializeSupabaseError(error)
+      );
       return names;
     }
 
@@ -178,7 +190,10 @@ export function createScheduleService() {
   return new ScheduleService();
 }
 
-function mapShiftToEvent(shift: ScheduleShiftRow, promoterNames: Map<string, string>): ScheduleEvent {
+function mapShiftToEvent(
+  shift: ScheduleShiftRow,
+  promoterNames: Map<string, string>
+): ScheduleEvent {
   return {
     id: shift.id,
     title: "Shift",
@@ -191,7 +206,10 @@ function mapShiftToEvent(shift: ScheduleShiftRow, promoterNames: Map<string, str
   };
 }
 
-function mapVisitToEvent(visit: ScheduleVisitRow, promoterNames: Map<string, string>): ScheduleEvent {
+function mapVisitToEvent(
+  visit: ScheduleVisitRow,
+  promoterNames: Map<string, string>
+): ScheduleEvent {
   return {
     id: visit.id,
     title: visit.form_name || "Check-in",

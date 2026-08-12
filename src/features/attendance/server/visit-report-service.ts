@@ -46,7 +46,13 @@ export type VisitReportPhotoItem = {
 
 const VISIT_REPORT_PHOTO_BUCKET = "visit-report-photos";
 const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
+const ALLOWED_PHOTO_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif"
+]);
 
 let visitReportPhotoBucketReady: Promise<void> | null = null;
 
@@ -73,7 +79,12 @@ function visitReportStoreError(error: unknown) {
 }
 
 function sanitizeFileName(name: string) {
-  return name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "photo";
+  return (
+    name
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "photo"
+  );
 }
 
 function asVisitReportPhotoItems(value: Json): VisitReportPhotoItem[] {
@@ -156,7 +167,10 @@ export class VisitReportService {
 
         const contentType = item.file.type || "application/octet-stream";
         if (!ALLOWED_PHOTO_TYPES.has(contentType)) {
-          throw new AppError("VALIDATION_ERROR", `${item.label} must be a JPG, PNG, WebP, or HEIC image`);
+          throw new AppError(
+            "VALIDATION_ERROR",
+            `${item.label} must be a JPG, PNG, WebP, or HEIC image`
+          );
         }
 
         const storagePath = [
@@ -171,7 +185,11 @@ export class VisitReportService {
           .upload(storagePath, item.file, { contentType, upsert: false });
 
         if (error) {
-          throw new AppError("INTERNAL_ERROR", `Failed to upload ${item.label.toLowerCase()}`, error);
+          throw new AppError(
+            "INTERNAL_ERROR",
+            `Failed to upload ${item.label.toLowerCase()}`,
+            error
+          );
         }
 
         return {
@@ -237,7 +255,9 @@ export class VisitReportService {
 
     return Promise.all(
       items.map(async (item) => {
-        const { data, error } = await admin.storage.from(item.bucket).createSignedUrl(item.path, 60 * 60);
+        const { data, error } = await admin.storage
+          .from(item.bucket)
+          .createSignedUrl(item.path, 60 * 60);
         if (error || !data?.signedUrl) {
           console.error("[VisitReportService] Failed to sign photo URL:", error);
           return item;
@@ -318,9 +338,16 @@ export class VisitReportService {
     return this.startCheckIn(storeId, "gps", metadata);
   }
 
-  private async startCheckIn(storeId: string, checkInType: "remote" | "gps", metadata?: GpsCheckInMetadata) {
+  private async startCheckIn(
+    storeId: string,
+    checkInType: "remote" | "gps",
+    metadata?: GpsCheckInMetadata
+  ) {
     const session = await this.authService.requireSession();
-    if (!session.roles.includes("promoter") || session.roles.some((role) => role === "admin" || role === "manager")) {
+    if (
+      !session.roles.includes("promoter") ||
+      session.roles.some((role) => role === "admin" || role === "manager")
+    ) {
       throw new AppError("FORBIDDEN", "Only promoters can start remote check-in");
     }
 
@@ -361,7 +388,11 @@ export class VisitReportService {
     let gpsUpdate:
       | Pick<
           Database["public"]["Tables"]["visit_reports"]["Insert"],
-          "checkin_lat" | "checkin_lng" | "checkin_accuracy" | "checkin_at" | "checkin_distance_meters"
+          | "checkin_lat"
+          | "checkin_lng"
+          | "checkin_accuracy"
+          | "checkin_at"
+          | "checkin_distance_meters"
         >
       | undefined;
 
@@ -371,14 +402,19 @@ export class VisitReportService {
       }
 
       if (store.latitude == null || store.longitude == null) {
-        throw new AppError("VALIDATION_ERROR", "This place does not have GPS coordinates configured");
+        throw new AppError(
+          "VALIDATION_ERROR",
+          "This place does not have GPS coordinates configured"
+        );
       }
 
       const validation = validateGpsCheckIn(metadata, {
         latitude: Number(store.latitude),
         longitude: Number(store.longitude),
         allowedRadiusMeters:
-          store.allowed_radius_meters ?? store.geofence_radius_meters ?? DEFAULT_ALLOWED_RADIUS_METERS
+          store.allowed_radius_meters ??
+          store.geofence_radius_meters ??
+          DEFAULT_ALLOWED_RADIUS_METERS
       });
 
       if (!validation.allowed) {
@@ -444,7 +480,11 @@ export class VisitReportService {
         .maybeSingle();
 
       if (defaultAssignmentError) {
-        throw new AppError("INTERNAL_ERROR", "Failed to resolve assigned form", defaultAssignmentError);
+        throw new AppError(
+          "INTERNAL_ERROR",
+          "Failed to resolve assigned form",
+          defaultAssignmentError
+        );
       }
 
       resolvedFormId = defaultAssignment?.form_id ?? null;
@@ -464,7 +504,12 @@ export class VisitReportService {
       throw new AppError("INTERNAL_ERROR", "Failed to load selected form", formRecordError);
     }
 
-    if (!formRecord || formRecord.tenant_id !== session.user.tenantId || !formRecord.is_active || formRecord.deleted_at) {
+    if (
+      !formRecord ||
+      formRecord.tenant_id !== session.user.tenantId ||
+      !formRecord.is_active ||
+      formRecord.deleted_at
+    ) {
       throw new AppError("VALIDATION_ERROR", "This form is not available for the selected place");
     }
 
@@ -500,7 +545,9 @@ export class VisitReportService {
       form_id: resolvedFormId,
       form_name: formRecord.name,
       form_answers: payload.formAnswers as Json,
-      ...(mergedPhotoItems.size > 0 ? { photo_items: Array.from(mergedPhotoItems.values()) as Json } : {}),
+      ...(mergedPhotoItems.size > 0
+        ? { photo_items: Array.from(mergedPhotoItems.values()) as Json }
+        : {}),
       note: payload.note,
       ...(payload.submit
         ? {
@@ -550,12 +597,14 @@ export class VisitReportService {
     const admin = createSupabaseAdminClient();
     let query = admin
       .from("visit_reports")
-      .select(`
+      .select(
+        `
         *,
         retail_stores!visit_reports_store_id_fkey(name, address, city, country, latitude, longitude, allowed_radius_meters),
         users!visit_reports_promoter_user_id_fkey(full_name, email),
         survey_forms!visit_reports_form_id_fkey(schema_json)
-      `)
+      `
+      )
       .eq("id", reportId)
       .is("deleted_at", null);
 
@@ -578,7 +627,9 @@ export class VisitReportService {
     }
 
     const report = data as unknown as VisitReportWithRelations;
-    report.photo_items = (await this.withSignedPhotoUrls(asVisitReportPhotoItems(report.photo_items))) as Json;
+    report.photo_items = (await this.withSignedPhotoUrls(
+      asVisitReportPhotoItems(report.photo_items)
+    )) as Json;
 
     return report;
   }
@@ -598,14 +649,21 @@ export class VisitReportService {
     }
 
     const admin = createSupabaseAdminClient();
+    // List view only renders scalar fields — the heavy jsonb columns
+    // (form_answers/photo_items/sales_numbers/merchandising) and the
+    // survey_forms.schema_json join are fetched per-row by getReportForReview
+    // instead, since they're only needed on the single-report detail view.
     let query = admin
       .from("visit_reports")
-      .select(`
-        *,
+      .select(
+        `
+        id, tenant_id, store_id, promoter_user_id, check_in_type, status,
+        started_at, checkin_at, checked_out_at, form_id, form_name, note,
+        reviewed_by_user_id, reviewed_at, review_note, created_at, updated_at,
         retail_stores!visit_reports_store_id_fkey(name, address, city, country, latitude, longitude, allowed_radius_meters),
-        users!visit_reports_promoter_user_id_fkey(full_name, email),
-        survey_forms!visit_reports_form_id_fkey(schema_json)
-      `)
+        users!visit_reports_promoter_user_id_fkey(full_name, email)
+      `
+      )
       .is("deleted_at", null)
       .order("checked_out_at", { ascending: false, nullsFirst: false })
       .order("started_at", { ascending: false })
@@ -627,7 +685,9 @@ export class VisitReportService {
       const start = new Date(`${filters.submittedDate}T00:00:00`);
       const end = new Date(start);
       end.setDate(end.getDate() + 1);
-      query = query.gte("checked_out_at", start.toISOString()).lt("checked_out_at", end.toISOString());
+      query = query
+        .gte("checked_out_at", start.toISOString())
+        .lt("checked_out_at", end.toISOString());
     }
 
     const { data, error } = await query;
@@ -658,22 +718,32 @@ export class VisitReportService {
     status?: ReportStatusFilter;
   }) {
     const session = await this.authService.requireSession();
-    if (!session.roles.includes("promoter") || session.roles.some((role) => role === "admin" || role === "manager")) {
+    if (
+      !session.roles.includes("promoter") ||
+      session.roles.some((role) => role === "admin" || role === "manager")
+    ) {
       throw new AppError("FORBIDDEN", "Only promoters can view their reports");
     }
 
     const supabase = await createSupabaseServerClient();
+    // Same rationale as listReportsForReview: drop the heavy jsonb columns
+    // that this list view never renders.
     let query = supabase
       .from("visit_reports")
-      .select(`
-        *,
+      .select(
+        `
+        id, tenant_id, store_id, promoter_user_id, check_in_type, status,
+        started_at, checkin_at, checked_out_at, form_id, form_name, note,
+        reviewed_by_user_id, reviewed_at, review_note, created_at, updated_at,
         retail_stores!visit_reports_store_id_fkey(name, address, city, country, latitude, longitude, allowed_radius_meters)
-      `)
+      `
+      )
       .eq("tenant_id", session.user.tenantId)
       .eq("promoter_user_id", session.user.id)
       .neq("status", "draft")
       .is("deleted_at", null)
-      .order("checked_out_at", { ascending: false, nullsFirst: false });
+      .order("checked_out_at", { ascending: false, nullsFirst: false })
+      .limit(50);
 
     if (filters.formName) {
       query = query.ilike("form_name", `%${filters.formName}%`);
@@ -687,7 +757,9 @@ export class VisitReportService {
       const start = new Date(`${filters.submittedDate}T00:00:00`);
       const end = new Date(start);
       end.setDate(end.getDate() + 1);
-      query = query.gte("checked_out_at", start.toISOString()).lt("checked_out_at", end.toISOString());
+      query = query
+        .gte("checked_out_at", start.toISOString())
+        .lt("checked_out_at", end.toISOString());
     }
 
     const { data, error } = await query;

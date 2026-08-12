@@ -25,12 +25,16 @@ export default async function CompaniesPage() {
   }
 
   const admin = createSupabaseAdminClient();
+  // Companies list is capped since it's a direct, truncatable listing; the
+  // users query stays unbounded since it feeds per-company counts and
+  // capping it would silently undercount larger tenants.
   const [companiesResult, { data: users }] = await Promise.all([
     admin
       .from("tenants")
       .select("id, name, slug, is_active, created_at")
       .is("deleted_at", null)
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true })
+      .limit(200),
     admin.from("users").select("tenant_id, is_active").is("deleted_at", null)
   ]);
   let companies = companiesResult.data as CompanyRow[] | null;
@@ -40,7 +44,8 @@ export default async function CompaniesPage() {
       .from("tenants")
       .select("id, name, slug, created_at")
       .is("deleted_at", null)
-      .order("name", { ascending: true });
+      .order("name", { ascending: true })
+      .limit(200);
 
     companies = fallback.data as CompanyRow[] | null;
   } else if (companiesResult.error) {
@@ -49,7 +54,7 @@ export default async function CompaniesPage() {
 
   const userCounts = new Map<string, { total: number; active: number }>();
 
-  for (const user of ((users as UserRow[] | null) || [])) {
+  for (const user of (users as UserRow[] | null) || []) {
     const current = userCounts.get(user.tenant_id) || { total: 0, active: 0 };
     current.total += 1;
     current.active += user.is_active ? 1 : 0;
