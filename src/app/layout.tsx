@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
-import "survey-core/survey-core.css";
 import "./globals.css";
 
 import { QueryProvider } from "@/shared/providers/query-provider";

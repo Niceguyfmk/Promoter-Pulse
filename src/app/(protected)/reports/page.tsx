@@ -1,12 +1,16 @@
 import type { Route } from "next";
-import type { ReactNode } from "react";
+import Image from "next/image";
+import { Suspense, type ReactNode } from "react";
 
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import {
   createVisitReportService,
   type VisitReportWithRelations
 } from "@/features/attendance/server/visit-report-service";
-import { deleteVisitReportAction, reviewVisitReportAction } from "@/features/attendance/server/visit-report-actions";
+import {
+  deleteVisitReportAction,
+  reviewVisitReportAction
+} from "@/features/attendance/server/visit-report-actions";
 import type { Json } from "@/shared/supabase/database.types";
 import { extractSurveyLabels } from "@/features/forms/lib/survey-schema";
 import {
@@ -36,7 +40,9 @@ function flattenAnswerValue(value: Json): string {
 
   if (value && typeof value === "object") {
     if ("content" in value && typeof value.content === "string" && value.content) {
-      return "name" in value && typeof value.name === "string" && value.name ? value.name : "Uploaded file";
+      return "name" in value && typeof value.name === "string" && value.name
+        ? value.name
+        : "Uploaded file";
     }
 
     return Object.entries(value)
@@ -137,26 +143,30 @@ function reportAnswerEntries(report: VisitReportWithRelations) {
   return Array.from(merged.entries());
 }
 
-function asPhotoItems(value: Json): Array<{ label: string; name: string; size: number; url?: string }> {
+function asPhotoItems(
+  value: Json
+): Array<{ label: string; name: string; size: number; url?: string }> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.filter((item): item is { label: string; name: string; size: number; url?: string } => {
-    if (!item || typeof item !== "object") {
-      return false;
-    }
+  return value.filter(
+    (item): item is { label: string; name: string; size: number; url?: string } => {
+      if (!item || typeof item !== "object") {
+        return false;
+      }
 
-    return (
-      "label" in item &&
-      "name" in item &&
-      "size" in item &&
-      typeof item.label === "string" &&
-      typeof item.name === "string" &&
-      typeof item.size === "number" &&
-      (!("url" in item) || typeof item.url === "string")
-    );
-  });
+      return (
+        "label" in item &&
+        "name" in item &&
+        "size" in item &&
+        typeof item.label === "string" &&
+        typeof item.name === "string" &&
+        typeof item.size === "number" &&
+        (!("url" in item) || typeof item.url === "string")
+      );
+    }
+  );
 }
 
 function statusLabel(status: string) {
@@ -232,7 +242,8 @@ type ManagerCheckInStatus = {
 };
 
 function managerCheckInStatus(report: VisitReportWithRelations): ManagerCheckInStatus {
-  const storeHasGps = report.retail_stores?.latitude != null && report.retail_stores.longitude != null;
+  const storeHasGps =
+    report.retail_stores?.latitude != null && report.retail_stores.longitude != null;
 
   if (!storeHasGps) {
     return {
@@ -315,7 +326,9 @@ function sortReports(
 
     switch (sortBy) {
       case "form":
-        comparison = (left.form_name || "Daily Check-in").localeCompare(right.form_name || "Daily Check-in");
+        comparison = (left.form_name || "Daily Check-in").localeCompare(
+          right.form_name || "Daily Check-in"
+        );
         break;
       case "promoter":
         comparison = (left.users?.full_name || left.users?.email || "").localeCompare(
@@ -328,7 +341,9 @@ function sortReports(
           reportDurationMinutes(right.started_at, right.checked_out_at);
         break;
       case "checkin":
-        comparison = managerCheckInStatus(left).label.localeCompare(managerCheckInStatus(right).label);
+        comparison = managerCheckInStatus(left).label.localeCompare(
+          managerCheckInStatus(right).label
+        );
         break;
       case "status":
         comparison = statusLabel(left.status).localeCompare(statusLabel(right.status));
@@ -348,7 +363,9 @@ function sortReports(
     }
 
     if (sortBy === "checkin") {
-      comparison = managerCheckInStatus(left).label.localeCompare(managerCheckInStatus(right).label);
+      comparison = managerCheckInStatus(left).label.localeCompare(
+        managerCheckInStatus(right).label
+      );
     }
 
     if (sortBy === "status") {
@@ -361,7 +378,8 @@ function sortReports(
 
     return (
       (new Date(left.checked_out_at || left.started_at).getTime() -
-        new Date(right.checked_out_at || right.started_at).getTime()) * direction
+        new Date(right.checked_out_at || right.started_at).getTime()) *
+      direction
     );
   });
 }
@@ -378,7 +396,9 @@ function sortPromoterReports(
 
     switch (sortBy) {
       case "form":
-        comparison = (left.form_name || "Daily Check-in").localeCompare(right.form_name || "Daily Check-in");
+        comparison = (left.form_name || "Daily Check-in").localeCompare(
+          right.form_name || "Daily Check-in"
+        );
         break;
       case "duration":
         comparison =
@@ -402,7 +422,8 @@ function sortPromoterReports(
 
     return (
       (new Date(left.checked_out_at || left.started_at).getTime() -
-        new Date(right.checked_out_at || right.started_at).getTime()) * direction
+        new Date(right.checked_out_at || right.started_at).getTime()) *
+      direction
     );
   });
 }
@@ -458,45 +479,28 @@ export default async function ReportsPage({
     tab?: string;
   }>;
 }) {
-  const [session, filters] = await Promise.all([createAuthService().requireSession(), searchParams]);
+  const [session, filters] = await Promise.all([
+    createAuthService().requireSession(),
+    searchParams
+  ]);
   const canReview = session.roles.some((role) => role === "admin" || role === "manager");
   const reportService = createVisitReportService();
   const activeTab = filters.tab === "summary" ? "summary" : "reports";
 
   if (activeTab === "summary") {
     const period = normalizeSummaryPeriod(filters.summaryPeriod);
-    const summary = await createSummaryReportService().getSummary(period);
 
-    return <SummaryReportsView period={period} summary={summary} />;
+    return (
+      <Suspense fallback={<SummaryReportsSkeleton period={period} />}>
+        <SummaryReportsSection period={period} />
+      </Suspense>
+    );
   }
 
   if (!canReview) {
-    const reports = await reportService.listPromoterReports({
-      formName: filters.formName?.trim(),
-      submittedDate: filters.submittedDate,
-      status:
-        filters.status === "under-review" || filters.status === "accepted" || filters.status === "rejected"
-          ? filters.status
-          : "all"
-    });
-    const sortedReports = sortPromoterReports(
-      reports,
-      normalizePromoterSortColumn(filters.sortBy),
-      normalizeSortDirection(filters.sortDir)
-    );
-
     return (
       <main className="space-y-6 lg:space-y-8">
         <ReportsTabs activeTab="reports" />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-500">Promoter reports</p>
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Reports</h1>
-          </div>
-          <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
-            {reports.length} reports
-          </span>
-        </div>
 
         <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(180px,1fr)_180px_180px_auto]">
           <input
@@ -521,74 +525,18 @@ export default async function ReportsPage({
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
           </select>
-          <FormSubmitButton className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white" loadingLabel="Filtering..." type="submit">
+          <FormSubmitButton
+            className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white"
+            loadingLabel="Filtering..."
+            type="submit"
+          >
             Filter
           </FormSubmitButton>
         </form>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                <tr>
-                  <SortableHeader column="form" filters={filters} label="Form" />
-                  <SortableHeader column="submitted" filters={filters} label="Date submitted" />
-                  <SortableHeader column="duration" filters={filters} label="Hours logged" />
-                  <th className="px-5 py-4">Active</th>
-                  <SortableHeader column="status" filters={filters} label="Status" />
-                  <th className="px-5 py-4 text-right">Edit</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sortedReports.length > 0 ? (
-                  sortedReports.map((report) => (
-                    <tr key={report.id}>
-                      <td className="px-5 py-4 font-semibold text-slate-900">
-                        {report.form_name || "Daily Check-in"}
-                      </td>
-                      <td className="px-5 py-4 text-slate-600">{formatDate(report.checked_out_at)}</td>
-                      <td className="px-5 py-4 font-medium text-slate-700">
-                        {formatLoggedHours(report.started_at, report.checked_out_at)}
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${
-                            isReportActive(report) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          {isReportActive(report) ? "Active" : "Closed"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusPill status={report.status} />
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        {report.status === "rejected" ? (
-                          <Link
-                            className="inline-flex h-10 items-center rounded-xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700"
-                            href={`/places/${report.store_id}?reportId=${report.id}` as Route}
-                          >
-                            Edit
-                          </Link>
-                        ) : (
-                          <span className="inline-flex h-10 items-center rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-400">
-                            Locked
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td className="px-5 py-12 text-center text-slate-500" colSpan={6}>
-                      No reports match the selected filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <Suspense fallback={<ReportsTableSkeleton columns={6} />}>
+          <PromoterReportsSection filters={filters} />
+        </Suspense>
       </main>
     );
   }
@@ -597,10 +545,10 @@ export default async function ReportsPage({
     const report = await reportService.getReportForReview(filters.reportId);
 
     if (!report) {
-    return (
-      <main className="space-y-6 lg:space-y-8">
-        <ReportsTabs activeTab="reports" />
-        <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href="/reports">
+      return (
+        <main className="space-y-6 lg:space-y-8">
+          <ReportsTabs activeTab="reports" />
+          <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href="/reports">
             Back to reports
           </Link>
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-sm">
@@ -613,55 +561,9 @@ export default async function ReportsPage({
     return <ManagerReportDetail report={report} />;
   }
 
-  const reports = await reportService.listReportsForReview({
-    formName: filters.formName?.trim(),
-    promoterName: filters.promoterName?.trim(),
-    submittedDate: filters.submittedDate,
-    status:
-      filters.status === "under-review" || filters.status === "accepted" || filters.status === "rejected"
-        ? filters.status
-        : "all"
-  });
-  const sortedReports = sortReports(
-    reports,
-    normalizeSortColumn(filters.sortBy),
-    normalizeSortDirection(filters.sortDir)
-  );
-  const statusCounts = managerStatusCounts(sortedReports);
-
   return (
     <main className="space-y-6 lg:space-y-8">
       <ReportsTabs activeTab="reports" />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">Manager review</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Reports</h1>
-        </div>
-        <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
-          {reports.length} reports
-        </span>
-      </div>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <ManagerStatusCard
-          count={statusCounts["GPS Verified"]}
-          label="GPS Verified"
-          meaning="Valid"
-          tone="border-emerald-100 bg-emerald-50 text-emerald-800"
-        />
-        <ManagerStatusCard
-          count={statusCounts.Remote}
-          label="Remote"
-          meaning="Exception"
-          tone="border-amber-100 bg-amber-50 text-amber-800"
-        />
-        <ManagerStatusCard
-          count={statusCounts["Missing Store GPS"]}
-          label="Missing Store GPS"
-          meaning="Setup issue"
-          tone="border-red-100 bg-red-50 text-red-800"
-        />
-      </section>
 
       <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[minmax(160px,1fr)_minmax(160px,1fr)_180px_180px_auto]">
         <input
@@ -692,10 +594,198 @@ export default async function ReportsPage({
           <option value="accepted">Accepted</option>
           <option value="rejected">Rejected</option>
         </select>
-        <FormSubmitButton className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white" loadingLabel="Filtering..." type="submit">
+        <FormSubmitButton
+          className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white"
+          loadingLabel="Filtering..."
+          type="submit"
+        >
           Filter
         </FormSubmitButton>
       </form>
+
+      <Suspense fallback={<ReportsTableSkeleton columns={6} withStatusCards />}>
+        <ManagerReportsSection filters={filters} />
+      </Suspense>
+    </main>
+  );
+}
+
+async function PromoterReportsSection({
+  filters
+}: {
+  filters: {
+    formName?: string;
+    submittedDate?: string;
+    status?: string;
+    sortBy?: string;
+    sortDir?: string;
+  };
+}) {
+  const reports = await createVisitReportService().listPromoterReports({
+    formName: filters.formName?.trim(),
+    submittedDate: filters.submittedDate,
+    status:
+      filters.status === "under-review" ||
+      filters.status === "accepted" ||
+      filters.status === "rejected"
+        ? filters.status
+        : "all"
+  });
+  const sortedReports = sortPromoterReports(
+    reports,
+    normalizePromoterSortColumn(filters.sortBy),
+    normalizeSortDirection(filters.sortDir)
+  );
+
+  return (
+    <>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">Promoter reports</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Reports
+          </h1>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
+          {reports.length} reports
+        </span>
+      </div>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <tr>
+                <SortableHeader column="form" filters={filters} label="Form" />
+                <SortableHeader column="submitted" filters={filters} label="Date submitted" />
+                <SortableHeader column="duration" filters={filters} label="Hours logged" />
+                <th className="px-5 py-4">Active</th>
+                <SortableHeader column="status" filters={filters} label="Status" />
+                <th className="px-5 py-4 text-right">Edit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sortedReports.length > 0 ? (
+                sortedReports.map((report) => (
+                  <tr key={report.id}>
+                    <td className="px-5 py-4 font-semibold text-slate-900">
+                      {report.form_name || "Daily Check-in"}
+                    </td>
+                    <td className="px-5 py-4 text-slate-600">
+                      {formatDate(report.checked_out_at)}
+                    </td>
+                    <td className="px-5 py-4 font-medium text-slate-700">
+                      {formatLoggedHours(report.started_at, report.checked_out_at)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${
+                          isReportActive(report)
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {isReportActive(report) ? "Active" : "Closed"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <StatusPill status={report.status} />
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      {report.status === "rejected" ? (
+                        <Link
+                          className="inline-flex h-10 items-center rounded-xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700"
+                          href={`/places/${report.store_id}?reportId=${report.id}` as Route}
+                        >
+                          Edit
+                        </Link>
+                      ) : (
+                        <span className="inline-flex h-10 items-center rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-400">
+                          Locked
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-5 py-12 text-center text-slate-500" colSpan={6}>
+                    No reports match the selected filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </>
+  );
+}
+
+async function ManagerReportsSection({
+  filters
+}: {
+  filters: {
+    formName?: string;
+    promoterName?: string;
+    submittedDate?: string;
+    status?: string;
+    sortBy?: string;
+    sortDir?: string;
+  };
+}) {
+  const reports = await createVisitReportService().listReportsForReview({
+    formName: filters.formName?.trim(),
+    promoterName: filters.promoterName?.trim(),
+    submittedDate: filters.submittedDate,
+    status:
+      filters.status === "under-review" ||
+      filters.status === "accepted" ||
+      filters.status === "rejected"
+        ? filters.status
+        : "all"
+  });
+  const sortedReports = sortReports(
+    reports,
+    normalizeSortColumn(filters.sortBy),
+    normalizeSortDirection(filters.sortDir)
+  );
+  const statusCounts = managerStatusCounts(sortedReports);
+
+  return (
+    <>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">Manager review</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Reports
+          </h1>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
+          {reports.length} reports
+        </span>
+      </div>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <ManagerStatusCard
+          count={statusCounts["GPS Verified"]}
+          label="GPS Verified"
+          meaning="Valid"
+          tone="border-emerald-100 bg-emerald-50 text-emerald-800"
+        />
+        <ManagerStatusCard
+          count={statusCounts.Remote}
+          label="Remote"
+          meaning="Exception"
+          tone="border-amber-100 bg-amber-50 text-amber-800"
+        />
+        <ManagerStatusCard
+          count={statusCounts["Missing Store GPS"]}
+          label="Missing Store GPS"
+          meaning="Setup issue"
+          tone="border-red-100 bg-red-50 text-red-800"
+        />
+      </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -715,14 +805,19 @@ export default async function ReportsPage({
                 sortedReports.map((report) => (
                   <tr key={report.id}>
                     <td className="px-5 py-4 font-semibold text-slate-900">
-                      <Link className="text-slate-950 underline-offset-4 hover:underline" href={`/reports?reportId=${report.id}`}>
+                      <Link
+                        className="text-slate-950 underline-offset-4 hover:underline"
+                        href={`/reports?reportId=${report.id}`}
+                      >
                         {report.form_name || "Daily Check-in"}
                       </Link>
                     </td>
                     <td className="px-5 py-4 text-slate-600">
                       {report.users?.full_name || report.users?.email || "Unknown promoter"}
                     </td>
-                    <td className="px-5 py-4 text-slate-600">{formatDate(report.checked_out_at)}</td>
+                    <td className="px-5 py-4 text-slate-600">
+                      {formatDate(report.checked_out_at)}
+                    </td>
                     <td className="px-5 py-4 font-medium text-slate-700">
                       {formatReportDuration(report.started_at, report.checked_out_at)}
                     </td>
@@ -745,12 +840,50 @@ export default async function ReportsPage({
           </table>
         </div>
       </section>
-    </main>
+    </>
+  );
+}
+
+function ReportsTableSkeleton({
+  columns,
+  withStatusCards
+}: {
+  columns: number;
+  withStatusCards?: boolean;
+}) {
+  return (
+    <div className="animate-pulse space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="h-9 w-40 rounded-lg bg-slate-200" />
+        <div className="h-7 w-24 rounded-full bg-slate-200" />
+      </div>
+
+      {withStatusCards ? (
+        <div className="grid gap-3 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div className="h-24 rounded-2xl border border-slate-200 bg-slate-100" key={index} />
+          ))}
+        </div>
+      ) : null}
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="h-11 bg-slate-100" />
+        {Array.from({ length: 6 }).map((_, row) => (
+          <div className="flex gap-4 border-t border-slate-100 px-5 py-4" key={row}>
+            {Array.from({ length: columns }).map((_, col) => (
+              <div className="h-4 flex-1 rounded bg-slate-100" key={col} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
-  const { assets: surveyAssets, nonAssetEntries: answerEntries } = extractSurveyUploadedAssets(reportAnswerEntries(report));
+  const { assets: surveyAssets, nonAssetEntries: answerEntries } = extractSurveyUploadedAssets(
+    reportAnswerEntries(report)
+  );
   const schemaLabels = extractSurveyLabels(report.survey_forms?.schema_json ?? {});
 
   const photoItems = asPhotoItems(report.photo_items);
@@ -793,7 +926,9 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
               {report.retail_stores?.name || "Unknown place"} by{" "}
               {report.users?.full_name || report.users?.email || "Unknown promoter"}
             </p>
-            <p className="mt-1 text-sm text-slate-500">Submitted {formatDate(report.checked_out_at)}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Submitted {formatDate(report.checked_out_at)}
+            </p>
             <p className="mt-1 text-sm text-slate-500">
               Checked in for {formatReportDuration(report.started_at, report.checked_out_at)}
             </p>
@@ -805,7 +940,11 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
           <section className="space-y-3">
             {answerEntries.length > 0 ? (
               answerEntries.map(([key, value]) => (
-                <SummaryItem key={key} label={schemaLabels[key] || key} value={flattenAnswerValue(value)} />
+                <SummaryItem
+                  key={key}
+                  label={schemaLabels[key] || key}
+                  value={flattenAnswerValue(value)}
+                />
               ))
             ) : (
               <SummaryItem label="Answers" value="No answers captured" />
@@ -867,10 +1006,10 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
             ) : (
               <div className="space-y-4">
                 <div>
-                <p className="text-sm font-semibold text-slate-800">Review complete</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {report.review_note || "No manager note added."}
-                </p>
+                  <p className="text-sm font-semibold text-slate-800">Review complete</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    {report.review_note || "No manager note added."}
+                  </p>
                 </div>
                 <form action={deleteVisitReportAction}>
                   <input name="reportId" type="hidden" value={report.id} />
@@ -925,7 +1064,9 @@ function ReportsTabs({ activeTab }: { activeTab: "reports" | "summary" }) {
         <Link
           className={[
             "flex h-11 flex-1 items-center justify-center rounded-xl px-5 text-sm font-bold transition sm:flex-none",
-            activeTab === tab.value ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            activeTab === tab.value
+              ? "bg-slate-950 text-white"
+              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
           ].join(" ")}
           href={tab.href as Route}
           key={tab.value}
@@ -937,7 +1078,43 @@ function ReportsTabs({ activeTab }: { activeTab: "reports" | "summary" }) {
   );
 }
 
-function SummaryReportsView({ period, summary }: { period: SummaryReportPeriod; summary: SummaryReportData }) {
+async function SummaryReportsSection({ period }: { period: SummaryReportPeriod }) {
+  const summary = await createSummaryReportService().getSummary(period);
+
+  return <SummaryReportsView period={period} summary={summary} />;
+}
+
+function SummaryReportsSkeleton({ period }: { period: SummaryReportPeriod }) {
+  return (
+    <main className="space-y-6 lg:space-y-8">
+      <ReportsTabs activeTab="summary" />
+
+      <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 w-48 rounded bg-slate-200" />
+          <div className="h-10 w-64 rounded bg-slate-200" />
+        </div>
+        <PeriodSwitcher currentPeriod={period} />
+      </section>
+
+      <div className="grid animate-pulse gap-3 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div className="h-32 rounded-2xl border border-slate-200 bg-slate-100" key={index} />
+        ))}
+      </div>
+
+      <div className="h-64 animate-pulse rounded-[28px] border border-slate-200 bg-slate-100" />
+    </main>
+  );
+}
+
+function SummaryReportsView({
+  period,
+  summary
+}: {
+  period: SummaryReportPeriod;
+  summary: SummaryReportData;
+}) {
   const activityRows: SummaryReportMetric[] = [
     { label: "Forms", value: summary.activitiesByType.forms },
     { label: "Retail Audits", value: summary.activitiesByType.retailAudits },
@@ -947,7 +1124,10 @@ function SummaryReportsView({ period, summary }: { period: SummaryReportPeriod; 
     { label: "Client Conversions", value: summary.activitiesByType.clientConversions },
     { label: "Sales Documents", value: summary.activitiesByType.salesDocuments }
   ];
-  const formsRows = summary.formsBreakdown.length > 0 ? summary.formsBreakdown : [{ label: "Daily Check-in", value: 0 }];
+  const formsRows =
+    summary.formsBreakdown.length > 0
+      ? summary.formsBreakdown
+      : [{ label: "Daily Check-in", value: 0 }];
   const visitPlanRows: SummaryReportMetric[] = [
     { label: "Total visits done", value: summary.visitPlans.totalVisitsDone },
     { label: "Scheduled", value: summary.visitPlans.scheduled },
@@ -962,7 +1142,9 @@ function SummaryReportsView({ period, summary }: { period: SummaryReportPeriod; 
 
       <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">{summary.organizationName} Summary Report</p>
+          <p className="text-sm font-medium text-slate-500">
+            {summary.organizationName} Summary Report
+          </p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             Reports Summary
           </h1>
@@ -1002,13 +1184,24 @@ function SummaryReportsView({ period, summary }: { period: SummaryReportPeriod; 
 
       <section className="grid gap-3 md:grid-cols-4">
         <EfficiencyCard label="Days Active" value={summary.efficiency.daysActive.toString()} />
-        <EfficiencyCard label="Working Time" value={formatDuration(summary.efficiency.workingMinutes)} />
+        <EfficiencyCard
+          label="Working Time"
+          value={formatDuration(summary.efficiency.workingMinutes)}
+        />
         <EfficiencyCard label="Total Mileage" value={summary.efficiency.totalMileage.toFixed(2)} />
-        <EfficiencyCard label="Visited Clients" value={summary.efficiency.visitedClients.toString()} />
+        <EfficiencyCard
+          label="Visited Clients"
+          value={summary.efficiency.visitedClients.toString()}
+        />
       </section>
 
       <SummaryBreakdownSection
-        chart={<DonutChart data={activityRows} palette={["#0877bd", "#14b8a6", "#cbd5e1", "#f59e0b", "#22c55e", "#a855f7", "#ef4444"]} />}
+        chart={
+          <DonutChart
+            data={activityRows}
+            palette={["#0877bd", "#14b8a6", "#cbd5e1", "#f59e0b", "#22c55e", "#a855f7", "#ef4444"]}
+          />
+        }
         rows={activityRows}
         title="Activities by Type"
       />
@@ -1038,7 +1231,12 @@ function SummaryReportsView({ period, summary }: { period: SummaryReportPeriod; 
       </section>
 
       <SummaryBreakdownSection
-        chart={<DonutChart data={visitPlanRows} palette={["#94a3b8", "#14b8a6", "#22c55e", "#a3a3a3", "#ef4444"]} />}
+        chart={
+          <DonutChart
+            data={visitPlanRows}
+            palette={["#94a3b8", "#14b8a6", "#22c55e", "#a3a3a3", "#ef4444"]}
+          />
+        }
         rows={visitPlanRows}
         title="Visit Plans"
       />
@@ -1060,7 +1258,9 @@ function PeriodSwitcher({ currentPeriod }: { currentPeriod: SummaryReportPeriod 
         <Link
           className={[
             "h-10 rounded-xl px-4 text-center text-sm font-bold leading-10 transition",
-            currentPeriod === item.value ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-50"
+            currentPeriod === item.value
+              ? "bg-slate-950 text-white"
+              : "text-slate-500 hover:bg-slate-50"
           ].join(" ")}
           href={`/reports?tab=summary&summaryPeriod=${item.value}` as Route}
           key={item.value}
@@ -1155,7 +1355,11 @@ function DonutChart({ data, palette }: { data: SummaryReportMetric[]; palette: s
 
   return (
     <div className="flex min-h-72 flex-col items-center justify-center gap-4">
-      <svg aria-label={`${legend} donut chart`} className="h-56 w-56 -rotate-90" viewBox="0 0 160 160">
+      <svg
+        aria-label={`${legend} donut chart`}
+        className="h-56 w-56 -rotate-90"
+        viewBox="0 0 160 160"
+      >
         <circle cx="80" cy="80" fill="none" r={radius} stroke="#e2e8f0" strokeWidth="24" />
         {total > 0
           ? visible.map((item, index) => {
@@ -1185,7 +1389,10 @@ function DonutChart({ data, palette }: { data: SummaryReportMetric[]; palette: s
         {visible.length > 0 ? (
           visible.map((item, index) => (
             <span className="inline-flex items-center gap-2" key={item.label}>
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette[index % palette.length] }} />
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: palette[index % palette.length] }}
+              />
               {item.label}
             </span>
           ))
@@ -1201,7 +1408,10 @@ function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
   const width = 820;
   const height = 260;
   const padding = 34;
-  const maxValue = Math.max(1, ...data.flatMap((point) => [point.reps, point.clientVisits, point.activities]));
+  const maxValue = Math.max(
+    1,
+    ...data.flatMap((point) => [point.reps, point.clientVisits, point.activities])
+  );
   const pointFor = (value: number, index: number) => ({
     x: padding + (index / Math.max(data.length - 1, 1)) * (width - padding * 2),
     y: height - padding - (value / maxValue) * (height - padding * 2)
@@ -1219,7 +1429,14 @@ function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
           const y = height - padding - tick * (height - padding * 2);
           return (
             <g key={tick}>
-              <line stroke="#e2e8f0" strokeWidth="1" x1={padding} x2={width - padding} y1={y} y2={y} />
+              <line
+                stroke="#e2e8f0"
+                strokeWidth="1"
+                x1={padding}
+                x2={width - padding}
+                y1={y}
+                y2={y}
+              />
               <text fill="#64748b" fontSize="11" x="4" y={y + 4}>
                 {formatAxisValue(maxValue * tick, maxValue)}
               </text>
@@ -1230,16 +1447,26 @@ function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
           <g key={item.key}>
             <polyline
               fill="none"
-              points={data.map((point, index) => {
-                const coordinates = pointFor(point[item.key], index);
-                return `${coordinates.x},${coordinates.y}`;
-              }).join(" ")}
+              points={data
+                .map((point, index) => {
+                  const coordinates = pointFor(point[item.key], index);
+                  return `${coordinates.x},${coordinates.y}`;
+                })
+                .join(" ")}
               stroke={item.color}
               strokeWidth="3"
             />
             {data.map((point, index) => {
               const coordinates = pointFor(point[item.key], index);
-              return <circle cx={coordinates.x} cy={coordinates.y} fill={item.color} key={`${item.key}-${point.label}`} r="3.5" />;
+              return (
+                <circle
+                  cx={coordinates.x}
+                  cy={coordinates.y}
+                  fill={item.color}
+                  key={`${item.key}-${point.label}`}
+                  r="3.5"
+                />
+              );
             })}
           </g>
         ))}
@@ -1281,7 +1508,6 @@ function formatAxisValue(value: number, maxValue: number) {
   return Math.round(value).toString();
 }
 
-
 function SortableHeader({
   column,
   filters,
@@ -1304,7 +1530,10 @@ function SortableHeader({
 
   return (
     <th className="px-5 py-4">
-      <Link className="inline-flex items-center hover:text-slate-600" href={buildSortHref(filters, column)}>
+      <Link
+        className="inline-flex items-center hover:text-slate-600"
+        href={buildSortHref(filters, column)}
+      >
         {label}
         <span aria-hidden="true">{indicator}</span>
       </Link>
@@ -1316,7 +1545,9 @@ function ManagerCheckInPill({ report }: { report: VisitReportWithRelations }) {
   const status = managerCheckInStatus(report);
 
   return (
-    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase ring-1 ${status.tone}`}>
+    <span
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase ring-1 ${status.tone}`}
+    >
       {status.label} · {status.meaning}
     </span>
   );
@@ -1360,8 +1591,16 @@ function AssetAnswerItem({ assets, label }: { assets: ReviewAsset[]; label: stri
               rel="noreferrer"
               target="_blank"
             >
-              <img alt={asset.name} className="h-48 w-full object-cover" src={asset.url} />
-              <div className="truncate border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">{asset.name}</div>
+              <Image
+                alt={asset.name}
+                className="h-48 w-full object-cover"
+                height={192}
+                src={asset.url}
+                width={250}
+              />
+              <div className="truncate border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
+                {asset.name}
+              </div>
             </a>
           ) : (
             <div className="text-sm text-slate-700" key={`${label}-${asset.name}`}>

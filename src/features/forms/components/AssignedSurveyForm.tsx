@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Model } from "survey-core";
 import { Survey } from "survey-react-ui";
+import "survey-core/survey-core.css";
 import { promoterPulseTheme } from "../lib/theme";
 
 import type { Json } from "@/shared/supabase/database.types";
@@ -128,7 +129,8 @@ export function AssignedSurveyForm({
   if (forms.length === 0) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-        No forms are assigned to this place yet. Ask your manager to assign a form before submitting a visit report.
+        No forms are assigned to this place yet. Ask your manager to assign a form before submitting
+        a visit report.
       </div>
     );
   }
@@ -151,7 +153,9 @@ export function AssignedSurveyForm({
       </label>
 
       {selectedForm?.description ? (
-        <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">{selectedForm.description}</p>
+        <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+          {selectedForm.description}
+        </p>
       ) : null}
 
       {isMounted && surveyModel ? (

@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import { Suspense } from "react";
 
 import {
   createScheduleService,
@@ -65,13 +66,6 @@ export default async function SchedulePage({
 }) {
   const params = await searchParams;
   const visibleMonth = parseMonth(params.month);
-  const gridDays = buildCalendarDays(visibleMonth);
-  const firstGridDay = gridDays[0] ?? { date: visibleMonth };
-  const lastGridDay = gridDays[gridDays.length - 1] ?? { date: visibleMonth };
-  const rangeStart = startOfDay(firstGridDay.date);
-  const rangeEnd = addDays(startOfDay(lastGridDay.date), 1);
-  const schedule = await createScheduleService().getCalendarEvents(rangeStart, rangeEnd);
-  const eventsByDay = groupEventsByDay(schedule.events);
   const previousMonth = addMonths(visibleMonth, -1);
   const nextMonth = addMonths(visibleMonth, 1);
 
@@ -112,61 +106,102 @@ export default async function SchedulePage({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((weekday) => (
-            <div className="py-3" key={weekday}>
-              {weekday}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7">
-          {gridDays.map((day) => {
-            const events = eventsByDay.get(day.dateKey) ?? [];
-
-            return (
-              <div
-                className={[
-                  "min-h-32 border-b border-r border-slate-200 p-2 last:border-r-0 sm:min-h-36",
-                  day.isWeekEnd ? "border-r-0" : "",
-                  day.isToday ? "bg-yellow-50" : "",
-                  !day.isCurrentMonth ? "bg-slate-50/60 text-slate-300" : "text-slate-700"
-                ].join(" ")}
-                key={day.dateKey}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span
-                    className={[
-                      "text-xs tabular-nums",
-                      day.isCurrentMonth ? "text-slate-500" : "text-slate-300"
-                    ].join(" ")}
-                  >
-                    {day.date.getDate()}
-                  </span>
-                  {events.length === 0 ? (
-                    <span aria-hidden="true" className="text-lg font-bold leading-none text-slate-200">
-                      +
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="mt-2 space-y-1.5">
-                  {events.slice(0, 3).map((event) => (
-                    <CalendarEvent event={event} key={`${event.source}-${event.id}`} />
-                  ))}
-                  {events.length > 3 ? (
-                    <p className="truncate rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">
-                      +{events.length - 3} more
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <Suspense fallback={<CalendarGridSkeleton />}>
+        <CalendarGrid visibleMonth={visibleMonth} />
+      </Suspense>
     </main>
+  );
+}
+
+async function CalendarGrid({ visibleMonth }: { visibleMonth: Date }) {
+  const gridDays = buildCalendarDays(visibleMonth);
+  const firstGridDay = gridDays[0] ?? { date: visibleMonth };
+  const lastGridDay = gridDays[gridDays.length - 1] ?? { date: visibleMonth };
+  const rangeStart = startOfDay(firstGridDay.date);
+  const rangeEnd = addDays(startOfDay(lastGridDay.date), 1);
+  const schedule = await createScheduleService().getCalendarEvents(rangeStart, rangeEnd);
+  const eventsByDay = groupEventsByDay(schedule.events);
+
+  return (
+    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((weekday) => (
+          <div className="py-3" key={weekday}>
+            {weekday}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7">
+        {gridDays.map((day) => {
+          const events = eventsByDay.get(day.dateKey) ?? [];
+
+          return (
+            <div
+              className={[
+                "min-h-32 border-b border-r border-slate-200 p-2 last:border-r-0 sm:min-h-36",
+                day.isWeekEnd ? "border-r-0" : "",
+                day.isToday ? "bg-yellow-50" : "",
+                !day.isCurrentMonth ? "bg-slate-50/60 text-slate-300" : "text-slate-700"
+              ].join(" ")}
+              key={day.dateKey}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={[
+                    "text-xs tabular-nums",
+                    day.isCurrentMonth ? "text-slate-500" : "text-slate-300"
+                  ].join(" ")}
+                >
+                  {day.date.getDate()}
+                </span>
+                {events.length === 0 ? (
+                  <span
+                    aria-hidden="true"
+                    className="text-lg font-bold leading-none text-slate-200"
+                  >
+                    +
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-2 space-y-1.5">
+                {events.slice(0, 3).map((event) => (
+                  <CalendarEvent event={event} key={`${event.source}-${event.id}`} />
+                ))}
+                {events.length > 3 ? (
+                  <p className="truncate rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">
+                    +{events.length - 3} more
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function CalendarGridSkeleton() {
+  return (
+    <section className="animate-pulse overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((weekday) => (
+          <div className="py-3" key={weekday}>
+            {weekday}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {Array.from({ length: 35 }).map((_, index) => (
+          <div
+            className="min-h-32 border-b border-r border-slate-200 bg-slate-50 last:border-r-0 sm:min-h-36"
+            key={index}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

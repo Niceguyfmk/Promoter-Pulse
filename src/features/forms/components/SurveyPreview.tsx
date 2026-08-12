@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { Model } from "survey-core";
 import { Survey } from "survey-react-ui";
+import "survey-core/survey-core.css";
 import { promoterPulseTheme } from "../lib/theme";
 
 import { normalizeSurveyAnswers } from "../lib/survey-schema";
