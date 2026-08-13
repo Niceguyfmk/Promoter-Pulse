@@ -249,7 +249,7 @@ function managerCheckInStatus(report: VisitReportWithRelations): ManagerCheckInS
     return {
       label: "Missing Store GPS",
       meaning: "Setup issue",
-      tone: "bg-red-50 text-red-700 ring-red-100"
+      tone: "bg-danger-tint text-danger ring-danger/15"
     };
   }
 
@@ -257,14 +257,14 @@ function managerCheckInStatus(report: VisitReportWithRelations): ManagerCheckInS
     return {
       label: "GPS Verified",
       meaning: "Valid",
-      tone: "bg-emerald-50 text-emerald-700 ring-emerald-100"
+      tone: "bg-success-tint text-success ring-success/15"
     };
   }
 
   return {
     label: "Remote",
     meaning: "Exception",
-    tone: "bg-amber-50 text-amber-700 ring-amber-100"
+    tone: "bg-warning-tint text-warning ring-warning/15"
   };
 }
 
@@ -502,21 +502,21 @@ export default async function ReportsPage({
       <main className="space-y-6 lg:space-y-8">
         <ReportsTabs activeTab="reports" />
 
-        <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(180px,1fr)_180px_180px_auto]">
+        <form className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm md:grid-cols-[minmax(180px,1fr)_180px_180px_auto]">
           <input
-            className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
             defaultValue={filters.formName || ""}
             name="formName"
             placeholder="Filter by form name"
           />
           <input
-            className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
             defaultValue={filters.submittedDate || ""}
             name="submittedDate"
             type="date"
           />
           <select
-            className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
             defaultValue={filters.status || "all"}
             name="status"
           >
@@ -526,7 +526,7 @@ export default async function ReportsPage({
             <option value="rejected">Rejected</option>
           </select>
           <FormSubmitButton
-            className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white"
+            className="h-11 rounded-xl bg-ink px-5 text-sm font-bold text-white"
             loadingLabel="Filtering..."
             type="submit"
           >
@@ -548,11 +548,11 @@ export default async function ReportsPage({
       return (
         <main className="space-y-6 lg:space-y-8">
           <ReportsTabs activeTab="reports" />
-          <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href="/reports">
+          <Link className="text-sm font-bold text-text-2 hover:text-text" href="/reports">
             Back to reports
           </Link>
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-sm">
-            <h3 className="text-xl font-semibold text-slate-950">Report not found</h3>
+          <div className="rounded-2xl border border-dashed border-border bg-card/75 px-8 py-16 text-center shadow-sm">
+            <h3 className="text-xl font-semibold text-text">Report not found</h3>
           </div>
         </main>
       );
@@ -565,27 +565,27 @@ export default async function ReportsPage({
     <main className="space-y-6 lg:space-y-8">
       <ReportsTabs activeTab="reports" />
 
-      <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[minmax(160px,1fr)_minmax(160px,1fr)_180px_180px_auto]">
+      <form className="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm lg:grid-cols-[minmax(160px,1fr)_minmax(160px,1fr)_180px_180px_auto]">
         <input
-          className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
           defaultValue={filters.formName || ""}
           name="formName"
           placeholder="Filter by form name"
         />
         <input
-          className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
           defaultValue={filters.promoterName || ""}
           name="promoterName"
           placeholder="Filter by promoter"
         />
         <input
-          className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
           defaultValue={filters.submittedDate || ""}
           name="submittedDate"
           type="date"
         />
         <select
-          className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          className="h-11 rounded-xl border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
           defaultValue={filters.status || "all"}
           name="status"
         >
@@ -595,7 +595,7 @@ export default async function ReportsPage({
           <option value="rejected">Rejected</option>
         </select>
         <FormSubmitButton
-          className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white"
+          className="h-11 rounded-xl bg-ink px-5 text-sm font-bold text-white"
           loadingLabel="Filtering..."
           type="submit"
         >
@@ -641,20 +641,18 @@ async function PromoterReportsSection({
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">Promoter reports</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Reports
-          </h1>
+          <p className="text-sm font-medium text-text-2">Promoter reports</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">Reports</h1>
         </div>
-        <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
+        <span className="rounded-full bg-card px-3 py-1 text-sm font-medium text-text-2 shadow-sm">
           {reports.length} reports
         </span>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-surface text-left text-xs font-bold uppercase tracking-[0.16em] text-text-2">
               <tr>
                 <SortableHeader column="form" filters={filters} label="Form" />
                 <SortableHeader column="submitted" filters={filters} label="Date submitted" />
@@ -664,25 +662,23 @@ async function PromoterReportsSection({
                 <th className="px-5 py-4 text-right">Edit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {sortedReports.length > 0 ? (
                 sortedReports.map((report) => (
                   <tr key={report.id}>
-                    <td className="px-5 py-4 font-semibold text-slate-900">
+                    <td className="px-5 py-4 font-semibold text-text">
                       {report.form_name || "Daily Check-in"}
                     </td>
-                    <td className="px-5 py-4 text-slate-600">
-                      {formatDate(report.checked_out_at)}
-                    </td>
-                    <td className="px-5 py-4 font-medium text-slate-700">
+                    <td className="px-5 py-4 text-text-2">{formatDate(report.checked_out_at)}</td>
+                    <td className="px-5 py-4 font-medium text-text">
                       {formatLoggedHours(report.started_at, report.checked_out_at)}
                     </td>
                     <td className="px-5 py-4">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${
                           isReportActive(report)
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-slate-100 text-slate-500"
+                            ? "bg-success-tint text-success"
+                            : "bg-surface text-text-2"
                         }`}
                       >
                         {isReportActive(report) ? "Active" : "Closed"}
@@ -694,13 +690,13 @@ async function PromoterReportsSection({
                     <td className="px-5 py-4 text-right">
                       {report.status === "rejected" ? (
                         <Link
-                          className="inline-flex h-10 items-center rounded-xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700"
+                          className="inline-flex h-10 items-center rounded-lg bg-garnet px-4 text-sm font-bold text-white transition hover:bg-garnet-dark"
                           href={`/places/${report.store_id}?reportId=${report.id}` as Route}
                         >
                           Edit
                         </Link>
                       ) : (
-                        <span className="inline-flex h-10 items-center rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-400">
+                        <span className="inline-flex h-10 items-center rounded-xl bg-surface px-4 text-sm font-bold text-text-2">
                           Locked
                         </span>
                       )}
@@ -709,7 +705,7 @@ async function PromoterReportsSection({
                 ))
               ) : (
                 <tr>
-                  <td className="px-5 py-12 text-center text-slate-500" colSpan={6}>
+                  <td className="px-5 py-12 text-center text-text-2" colSpan={6}>
                     No reports match the selected filters.
                   </td>
                 </tr>
@@ -756,12 +752,10 @@ async function ManagerReportsSection({
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">Manager review</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Reports
-          </h1>
+          <p className="text-sm font-medium text-text-2">Manager review</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">Reports</h1>
         </div>
-        <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
+        <span className="rounded-full bg-card px-3 py-1 text-sm font-medium text-text-2 shadow-sm">
           {reports.length} reports
         </span>
       </div>
@@ -771,26 +765,26 @@ async function ManagerReportsSection({
           count={statusCounts["GPS Verified"]}
           label="GPS Verified"
           meaning="Valid"
-          tone="border-emerald-100 bg-emerald-50 text-emerald-800"
+          tone="border-success/15 bg-success-tint text-success"
         />
         <ManagerStatusCard
           count={statusCounts.Remote}
           label="Remote"
           meaning="Exception"
-          tone="border-amber-100 bg-amber-50 text-amber-800"
+          tone="border-warning/15 bg-warning-tint text-warning"
         />
         <ManagerStatusCard
           count={statusCounts["Missing Store GPS"]}
           label="Missing Store GPS"
           meaning="Setup issue"
-          tone="border-red-100 bg-red-50 text-red-800"
+          tone="border-danger/15 bg-danger-tint text-danger"
         />
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-surface text-left text-xs font-bold uppercase tracking-[0.16em] text-text-2">
               <tr>
                 <SortableHeader column="form" filters={filters} label="Form" />
                 <SortableHeader column="promoter" filters={filters} label="Promoter" />
@@ -800,25 +794,23 @@ async function ManagerReportsSection({
                 <SortableHeader column="status" filters={filters} label="Status" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {sortedReports.length > 0 ? (
                 sortedReports.map((report) => (
                   <tr key={report.id}>
-                    <td className="px-5 py-4 font-semibold text-slate-900">
+                    <td className="px-5 py-4 font-semibold text-text">
                       <Link
-                        className="text-slate-950 underline-offset-4 hover:underline"
+                        className="text-text underline-offset-4 hover:underline"
                         href={`/reports?reportId=${report.id}`}
                       >
                         {report.form_name || "Daily Check-in"}
                       </Link>
                     </td>
-                    <td className="px-5 py-4 text-slate-600">
+                    <td className="px-5 py-4 text-text-2">
                       {report.users?.full_name || report.users?.email || "Unknown promoter"}
                     </td>
-                    <td className="px-5 py-4 text-slate-600">
-                      {formatDate(report.checked_out_at)}
-                    </td>
-                    <td className="px-5 py-4 font-medium text-slate-700">
+                    <td className="px-5 py-4 text-text-2">{formatDate(report.checked_out_at)}</td>
+                    <td className="px-5 py-4 font-medium text-text">
                       {formatReportDuration(report.started_at, report.checked_out_at)}
                     </td>
                     <td className="px-5 py-4">
@@ -831,7 +823,7 @@ async function ManagerReportsSection({
                 ))
               ) : (
                 <tr>
-                  <td className="px-5 py-12 text-center text-slate-500" colSpan={6}>
+                  <td className="px-5 py-12 text-center text-text-2" colSpan={6}>
                     No reports match the selected filters.
                   </td>
                 </tr>
@@ -861,17 +853,17 @@ function ReportsTableSkeleton({
       {withStatusCards ? (
         <div className="grid gap-3 md:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div className="h-24 rounded-2xl border border-slate-200 bg-slate-100" key={index} />
+            <div className="h-24 rounded-2xl border border-border bg-surface" key={index} />
           ))}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="h-11 bg-slate-100" />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="h-11 bg-surface" />
         {Array.from({ length: 6 }).map((_, row) => (
-          <div className="flex gap-4 border-t border-slate-100 px-5 py-4" key={row}>
+          <div className="flex gap-4 border-t border-border px-5 py-4" key={row}>
             {Array.from({ length: columns }).map((_, col) => (
-              <div className="h-4 flex-1 rounded bg-slate-100" key={col} />
+              <div className="h-4 flex-1 rounded bg-surface" key={col} />
             ))}
           </div>
         ))}
@@ -909,30 +901,30 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
 
   return (
     <main className="space-y-6 lg:space-y-8">
-      <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href="/reports">
+      <Link className="text-sm font-bold text-text-2 hover:text-text" href="/reports">
         Back to reports
       </Link>
-      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="space-y-6 p-5 lg:p-6">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill status={report.status} />
               <ManagerCheckInPill report={report} />
             </div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-text">
               {report.form_name || "Daily Check-in"}
             </h1>
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="mt-3 text-sm text-text-2">
               {report.retail_stores?.name || "Unknown place"} by{" "}
               {report.users?.full_name || report.users?.email || "Unknown promoter"}
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-text-2">
               Submitted {formatDate(report.checked_out_at)}
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-text-2">
               Checked in for {formatReportDuration(report.started_at, report.checked_out_at)}
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-text-2">
               Hours logged {formatLoggedHours(report.started_at, report.checked_out_at)}
             </p>
           </div>
@@ -956,24 +948,24 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
           </section>
 
           {report.note ? (
-            <p className="rounded-2xl bg-slate-50/80 p-5 text-sm leading-6 text-slate-600">
+            <p className="rounded-2xl bg-surface/80 p-5 text-sm leading-6 text-text-2">
               {report.note}
             </p>
           ) : null}
 
-          <section className="rounded-[24px] bg-slate-50/80 p-5">
+          <section className="rounded-2xl bg-surface/80 p-5">
             {report.status === "submitted" ? (
               <div className="space-y-4">
                 <form action={reviewVisitReportAction} className="space-y-4">
                   <input name="reportId" type="hidden" value={report.id} />
                   <textarea
-                    className="min-h-36 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                    className="min-h-36 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
                     name="reviewNote"
                     placeholder="Manager review note"
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <FormSubmitButton
-                      className="h-12 rounded-xl bg-red-50 text-sm font-bold text-red-700 transition hover:bg-red-100"
+                      className="h-12 rounded-lg bg-danger-tint text-sm font-bold text-danger transition hover:bg-danger/15"
                       loadingLabel="Rejecting..."
                       name="status"
                       type="submit"
@@ -982,7 +974,7 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
                       Reject
                     </FormSubmitButton>
                     <FormSubmitButton
-                      className="h-12 rounded-xl bg-teal-600 text-sm font-bold text-white transition hover:bg-teal-700"
+                      className="h-12 rounded-lg bg-garnet text-sm font-bold text-white transition hover:bg-garnet-dark"
                       loadingLabel="Accepting..."
                       name="status"
                       type="submit"
@@ -995,7 +987,7 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
                 <form action={deleteVisitReportAction}>
                   <input name="reportId" type="hidden" value={report.id} />
                   <FormSubmitButton
-                    className="h-12 w-full rounded-xl border border-red-200 bg-white text-sm font-bold text-red-700 transition hover:bg-red-50"
+                    className="h-12 w-full rounded-lg border border-danger/25 bg-card text-sm font-bold text-danger transition hover:bg-danger-tint"
                     loadingLabel="Deleting..."
                     type="submit"
                   >
@@ -1006,15 +998,15 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">Review complete</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                  <p className="text-sm font-semibold text-text">Review complete</p>
+                  <p className="mt-2 text-sm leading-6 text-text-2">
                     {report.review_note || "No manager note added."}
                   </p>
                 </div>
                 <form action={deleteVisitReportAction}>
                   <input name="reportId" type="hidden" value={report.id} />
                   <FormSubmitButton
-                    className="h-12 w-full rounded-xl border border-red-200 bg-white text-sm font-bold text-red-700 transition hover:bg-red-50"
+                    className="h-12 w-full rounded-lg border border-danger/25 bg-card text-sm font-bold text-danger transition hover:bg-danger-tint"
                     loadingLabel="Deleting..."
                     type="submit"
                   >
@@ -1059,14 +1051,14 @@ function ReportsTabs({ activeTab }: { activeTab: "reports" | "summary" }) {
   ] as const;
 
   return (
-    <nav className="flex w-full gap-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm sm:w-fit">
+    <nav className="flex w-full gap-2 rounded-2xl border border-border bg-card p-1 shadow-sm sm:w-fit">
       {tabs.map((tab) => (
         <Link
           className={[
             "flex h-11 flex-1 items-center justify-center rounded-xl px-5 text-sm font-bold transition sm:flex-none",
             activeTab === tab.value
-              ? "bg-slate-950 text-white"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              ? "bg-ink text-white"
+              : "text-text-2 hover:bg-surface hover:text-text"
           ].join(" ")}
           href={tab.href as Route}
           key={tab.value}
@@ -1099,11 +1091,11 @@ function SummaryReportsSkeleton({ period }: { period: SummaryReportPeriod }) {
 
       <div className="grid animate-pulse gap-3 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div className="h-32 rounded-2xl border border-slate-200 bg-slate-100" key={index} />
+          <div className="h-32 rounded-2xl border border-border bg-surface" key={index} />
         ))}
       </div>
 
-      <div className="h-64 animate-pulse rounded-[28px] border border-slate-200 bg-slate-100" />
+      <div className="h-64 animate-pulse rounded-2xl border border-border bg-surface" />
     </main>
   );
 }
@@ -1142,35 +1134,35 @@ function SummaryReportsView({
 
       <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">
+          <p className="text-sm font-medium text-text-2">
             {summary.organizationName} Summary Report
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">
             Reports Summary
           </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="mt-2 text-sm leading-6 text-text-2">
             See your summary of activities below for {summary.periodLabel}.
           </p>
         </div>
         <PeriodSwitcher currentPeriod={period} />
       </section>
 
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="grid md:grid-cols-3">
           <HeroKpiCard
-            accent="bg-pink-600"
+            accent="bg-garnet"
             label="Reps"
             sublabel={`Avg. active reps/day: ${formatDecimal(summary.hero.avgActiveRepsPerDay)}`}
             value={summary.hero.reps}
           />
           <HeroKpiCard
-            accent="bg-teal-500"
+            accent="bg-brass"
             label="Client Visits"
             sublabel={`Avg. client visits/day: ${formatDecimal(summary.hero.avgClientVisitsPerDay)}`}
             value={summary.hero.clientVisits}
           />
           <HeroKpiCard
-            accent="bg-lime-400"
+            accent="bg-info"
             label="Activities"
             sublabel={`Avg. field activities/day: ${formatDecimal(summary.hero.avgActivitiesPerDay)}`}
             value={summary.hero.activities}
@@ -1178,7 +1170,7 @@ function SummaryReportsView({
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <SummaryTrendChart data={summary.trend} />
       </section>
 
@@ -1199,7 +1191,7 @@ function SummaryReportsView({
         chart={
           <DonutChart
             data={activityRows}
-            palette={["#0877bd", "#14b8a6", "#cbd5e1", "#f59e0b", "#22c55e", "#a855f7", "#ef4444"]}
+            palette={["#8e2a3b", "#a9824a", "#3060b0", "#b4762b", "#1f8f5d", "#62666e", "#c93b3b"]}
           />
         }
         rows={activityRows}
@@ -1207,23 +1199,23 @@ function SummaryReportsView({
       />
 
       <SummaryBreakdownSection
-        chart={<DonutChart data={formsRows} palette={["#0877bd", "#38bdf8", "#14b8a6"]} />}
+        chart={<DonutChart data={formsRows} palette={["#8e2a3b", "#a9824a", "#3060b0"]} />}
         rows={formsRows}
         title="Forms"
       />
 
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <SectionHeading title="Sales and Merchandising" />
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl bg-slate-50 p-5">
-            <p className="text-sm font-medium text-slate-500">Sales documents</p>
-            <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
+          <div className="rounded-2xl bg-surface p-5">
+            <p className="text-sm font-medium text-text-2">Sales documents</p>
+            <p className="mt-4 text-4xl font-semibold tracking-tight text-text">
               {summary.salesAndMerchandising.salesDocuments}
             </p>
           </div>
-          <div className="rounded-2xl bg-slate-50 p-5">
-            <p className="text-sm font-medium text-slate-500">Total Value</p>
-            <p className="mt-4 text-4xl font-semibold tracking-tight text-teal-700">
+          <div className="rounded-2xl bg-surface p-5">
+            <p className="text-sm font-medium text-text-2">Total Value</p>
+            <p className="mt-4 text-4xl font-semibold tracking-tight text-garnet">
               {formatCurrency(summary.salesAndMerchandising.totalValue)}
             </p>
           </div>
@@ -1234,7 +1226,7 @@ function SummaryReportsView({
         chart={
           <DonutChart
             data={visitPlanRows}
-            palette={["#94a3b8", "#14b8a6", "#22c55e", "#a3a3a3", "#ef4444"]}
+            palette={["#62666e", "#8e2a3b", "#1f8f5d", "#a9824a", "#c93b3b"]}
           />
         }
         rows={visitPlanRows}
@@ -1253,14 +1245,12 @@ function PeriodSwitcher({ currentPeriod }: { currentPeriod: SummaryReportPeriod 
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border bg-card p-1 shadow-sm">
       {periods.map((item) => (
         <Link
           className={[
             "h-10 rounded-xl px-4 text-center text-sm font-bold leading-10 transition",
-            currentPeriod === item.value
-              ? "bg-slate-950 text-white"
-              : "text-slate-500 hover:bg-slate-50"
+            currentPeriod === item.value ? "bg-ink text-white" : "text-text-2 hover:bg-surface"
           ].join(" ")}
           href={`/reports?tab=summary&summaryPeriod=${item.value}` as Route}
           key={item.value}
@@ -1284,12 +1274,12 @@ function HeroKpiCard({
   value: number;
 }) {
   return (
-    <article className="border-b border-slate-200 md:border-b-0 md:border-r md:last:border-r-0">
+    <article className="border-b border-border md:border-b-0 md:border-r md:last:border-r-0">
       <div className={`h-1.5 ${accent}`} />
       <div className="px-6 py-7 text-center">
-        <h2 className="text-2xl font-medium text-slate-500">{label}</h2>
-        <p className="mt-4 text-6xl font-semibold tracking-tight text-slate-950">{value}</p>
-        <p className="mt-4 text-sm font-medium text-slate-500">{sublabel}</p>
+        <h2 className="text-2xl font-medium text-text-2">{label}</h2>
+        <p className="mt-4 text-6xl font-semibold tracking-tight text-text">{value}</p>
+        <p className="mt-4 text-sm font-medium text-text-2">{sublabel}</p>
       </div>
     </article>
   );
@@ -1297,9 +1287,9 @@ function HeroKpiCard({
 
 function EfficiencyCard({ label, value }: { label: string; value: string }) {
   return (
-    <article className="rounded-[24px] border border-slate-200 bg-white p-5 text-center shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{value}</p>
+    <article className="rounded-2xl border border-border bg-card p-5 text-center shadow-sm">
+      <p className="text-sm font-medium text-text-2">{label}</p>
+      <p className="mt-4 text-4xl font-semibold tracking-tight text-text">{value}</p>
     </article>
   );
 }
@@ -1314,7 +1304,7 @@ function SummaryBreakdownSection({
   title: string;
 }) {
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
       <SectionHeading title={title} />
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(260px,0.9fr)_minmax(280px,1fr)] lg:items-center">
         <MetricTable rows={rows} />
@@ -1326,19 +1316,19 @@ function SummaryBreakdownSection({
 
 function SectionHeading({ title }: { title: string }) {
   return (
-    <div className="border-b border-slate-200 pb-2">
-      <h2 className="text-2xl font-semibold tracking-tight text-slate-950">{title}</h2>
+    <div className="border-b border-border pb-2">
+      <h2 className="text-2xl font-semibold tracking-tight text-text">{title}</h2>
     </div>
   );
 }
 
 function MetricTable({ rows }: { rows: SummaryReportMetric[] }) {
   return (
-    <div className="divide-y divide-slate-100">
+    <div className="divide-y divide-border">
       {rows.map((row) => (
         <div className="grid grid-cols-[minmax(0,1fr)_80px] gap-4 py-3 text-sm" key={row.label}>
-          <span className="font-medium text-slate-700">{row.label}</span>
-          <span className="text-right font-semibold tabular-nums text-slate-950">{row.value}</span>
+          <span className="font-medium text-text">{row.label}</span>
+          <span className="text-right font-semibold tabular-nums text-text">{row.value}</span>
         </div>
       ))}
     </div>
@@ -1360,7 +1350,7 @@ function DonutChart({ data, palette }: { data: SummaryReportMetric[]; palette: s
         className="h-56 w-56 -rotate-90"
         viewBox="0 0 160 160"
       >
-        <circle cx="80" cy="80" fill="none" r={radius} stroke="#e2e8f0" strokeWidth="24" />
+        <circle cx="80" cy="80" fill="none" r={radius} stroke="#e3e2dc" strokeWidth="24" />
         {total > 0
           ? visible.map((item, index) => {
               const dash = (item.value / total) * circumference;
@@ -1385,7 +1375,7 @@ function DonutChart({ data, palette }: { data: SummaryReportMetric[]; palette: s
             })
           : null}
       </svg>
-      <div className="flex flex-wrap justify-center gap-3 text-xs font-semibold text-slate-500">
+      <div className="flex flex-wrap justify-center gap-3 text-xs font-semibold text-text-2">
         {visible.length > 0 ? (
           visible.map((item, index) => (
             <span className="inline-flex items-center gap-2" key={item.label}>
@@ -1417,9 +1407,9 @@ function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
     y: height - padding - (value / maxValue) * (height - padding * 2)
   });
   const series = [
-    { color: "#db2777", key: "reps", label: "Reps" },
-    { color: "#14b8a6", key: "clientVisits", label: "Client visits" },
-    { color: "#c8d400", key: "activities", label: "Total activities" }
+    { color: "#8e2a3b", key: "reps", label: "Reps" },
+    { color: "#a9824a", key: "clientVisits", label: "Client visits" },
+    { color: "#3060b0", key: "activities", label: "Total activities" }
   ] as const;
 
   return (
@@ -1430,14 +1420,14 @@ function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
           return (
             <g key={tick}>
               <line
-                stroke="#e2e8f0"
+                stroke="#e3e2dc"
                 strokeWidth="1"
                 x1={padding}
                 x2={width - padding}
                 y1={y}
                 y2={y}
               />
-              <text fill="#64748b" fontSize="11" x="4" y={y + 4}>
+              <text fill="#62666e" fontSize="11" x="4" y={y + 4}>
                 {formatAxisValue(maxValue * tick, maxValue)}
               </text>
             </g>
@@ -1471,7 +1461,7 @@ function SummaryTrendChart({ data }: { data: SummaryReportData["trend"] }) {
           </g>
         ))}
       </svg>
-      <div className="flex flex-wrap justify-center gap-5 text-sm font-semibold text-slate-600">
+      <div className="flex flex-wrap justify-center gap-5 text-sm font-semibold text-text-2">
         {series.map((item) => (
           <span className="inline-flex items-center gap-2" key={item.key}>
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -1531,7 +1521,7 @@ function SortableHeader({
   return (
     <th className="px-5 py-4">
       <Link
-        className="inline-flex items-center hover:text-slate-600"
+        className="inline-flex items-center hover:text-text-2"
         href={buildSortHref(filters, column)}
       >
         {label}
@@ -1556,10 +1546,10 @@ function ManagerCheckInPill({ report }: { report: VisitReportWithRelations }) {
 function StatusPill({ status }: { status: string }) {
   const tone =
     status === "accepted"
-      ? "bg-emerald-50 text-emerald-700"
+      ? "bg-success-tint text-success"
       : status === "rejected"
-        ? "bg-red-50 text-red-700"
-        : "bg-amber-50 text-amber-700";
+        ? "bg-danger-tint text-danger"
+        : "bg-warning-tint text-warning";
 
   return (
     <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${tone}`}>
@@ -1570,22 +1560,22 @@ function StatusPill({ status }: { status: string }) {
 
 function SummaryItem({ label, value }: { label: string; value: string | undefined }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-800">{value || "Not provided"}</p>
+    <div className="rounded-xl border border-border p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-2">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-text">{value || "Not provided"}</p>
     </div>
   );
 }
 
 function AssetAnswerItem({ assets, label }: { assets: ReviewAsset[]; label: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+    <div className="rounded-xl border border-border p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-2">{label}</p>
       <div className="mt-3 flex flex-wrap gap-4">
         {assets.map((asset) =>
           isImageAsset(asset.name, asset.url) && asset.url ? (
             <a
-              className="block w-[250px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition hover:border-slate-300 shrink-0"
+              className="block w-[250px] overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-border shrink-0"
               href={asset.url}
               key={`${label}-${asset.name}`}
               rel="noreferrer"
@@ -1598,15 +1588,15 @@ function AssetAnswerItem({ assets, label }: { assets: ReviewAsset[]; label: stri
                 src={asset.url}
                 width={250}
               />
-              <div className="truncate border-t border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
+              <div className="truncate border-t border-border px-4 py-3 text-sm font-medium text-text">
                 {asset.name}
               </div>
             </a>
           ) : (
-            <div className="text-sm text-slate-700" key={`${label}-${asset.name}`}>
+            <div className="text-sm text-text" key={`${label}-${asset.name}`}>
               {asset.url ? (
                 <a
-                  className="text-teal-700 underline underline-offset-4"
+                  className="text-garnet underline underline-offset-4"
                   href={asset.url}
                   rel="noreferrer"
                   target="_blank"

@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 
 import { startGpsCheckInAction } from "../server/visit-report-actions";
+import { validateGpsCheckIn, type AssignedPlaceLocation } from "../lib/gps-validation";
 import {
-  validateGpsCheckIn,
-  type AssignedPlaceLocation
-} from "../lib/gps-validation";
-import { requestOneTimeGpsPosition, type GpsPermissionState } from "../services/gps-check-in-service";
+  requestOneTimeGpsPosition,
+  type GpsPermissionState
+} from "../services/gps-check-in-service";
 import { ButtonLoader, useLoading } from "@/shared/loading";
 
 type Props = {
@@ -44,8 +44,13 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
       position = await requestOneTimeGpsPosition();
       setPermissionState("ready");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unable to read your current location. Please retry.";
-      setPermissionState(errorMessage.toLowerCase().includes("denied") ? "permission-denied" : "unsupported");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Unable to read your current location. Please retry.";
+      setPermissionState(
+        errorMessage.toLowerCase().includes("denied") ? "permission-denied" : "unsupported"
+      );
       setMessage(errorMessage);
       endGpsOperation();
       return;
@@ -81,7 +86,7 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
   return (
     <div className="space-y-2">
       <button
-        className="h-12 w-full rounded-xl bg-cyan-900 px-3 text-xs font-bold uppercase text-white transition hover:bg-cyan-950 disabled:cursor-not-allowed disabled:opacity-70"
+        className="h-12 w-full rounded-lg bg-garnet px-3 text-xs font-bold uppercase text-white transition hover:bg-garnet-dark disabled:cursor-not-allowed disabled:opacity-70"
         disabled={isLoading || !canVerifyLocation}
         onClick={handleCheckIn}
         type="button"
@@ -89,12 +94,12 @@ export function GpsCheckInButton({ storeId, storeLocation }: Props) {
         <ButtonLoader label="Check in" loading={isLoading} loadingLabel="Verifying GPS..." />
       </button>
       {message ? (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-800">
+        <p className="rounded-lg bg-warning-tint px-3 py-2 text-xs font-medium leading-5 text-warning">
           {message}
         </p>
       ) : null}
       {!canVerifyLocation ? (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-800">
+        <p className="rounded-lg bg-warning-tint px-3 py-2 text-xs font-medium leading-5 text-warning">
           Store location has not been configured yet.
         </p>
       ) : null}

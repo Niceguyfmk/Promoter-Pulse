@@ -87,9 +87,7 @@ export const adminNav: NavItem[] = [
         />
       </svg>
     ),
-    children: [
-      { label: "Forms", href: "/templates/forms" as Route }
-    ]
+    children: [{ label: "Forms", href: "/templates/forms" as Route }]
   },
   {
     label: "Companies",
@@ -121,7 +119,9 @@ export const adminNav: NavItem[] = [
   }
 ];
 
-export const managerNav: NavItem[] = adminNav.filter((item) => item.label !== "Companies" && item.label !== "Users");
+export const managerNav: NavItem[] = adminNav.filter(
+  (item) => item.label !== "Companies" && item.label !== "Users"
+);
 
 export function ShellNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
@@ -129,7 +129,8 @@ export function ShellNav({ items }: { items: NavItem[] }) {
   return (
     <nav className="space-y-1">
       {items.map((item) => {
-        const childActive = item.children?.some((child) => pathname.startsWith(child.href)) ?? false;
+        const childActive =
+          item.children?.some((child) => pathname.startsWith(child.href)) ?? false;
         const active = pathname.startsWith(item.href) || childActive;
         const hasChildren = Boolean(item.children?.length);
 
@@ -138,66 +139,74 @@ export function ShellNav({ items }: { items: NavItem[] }) {
             {hasChildren ? (
               <div
                 className={[
-                  "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition",
+                  "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition",
                   active
-                    ? "bg-cyan-50 text-cyan-900 shadow-[inset_0_1px_2px_rgba(8,47,73,0.05)]"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-garnet-tint text-garnet"
+                    : "text-text-2 hover:bg-surface hover:text-text"
                 ].join(" ")}
               >
                 <span
                   className={[
-                    "flex h-10 w-10 items-center justify-center rounded-2xl border transition",
+                    "flex h-10 w-10 items-center justify-center rounded-xl border transition",
                     active
-                      ? "border-cyan-200 bg-white text-cyan-700 shadow-sm"
-                      : "border-transparent bg-slate-50 text-slate-400 group-hover:border-slate-200 group-hover:bg-white group-hover:text-slate-600"
+                      ? "border-garnet/25 bg-card text-garnet shadow-sm"
+                      : "border-transparent bg-surface text-text-2 group-hover:border-border group-hover:bg-card group-hover:text-text"
                   ].join(" ")}
                 >
                   {item.icon}
                 </span>
                 <span className="flex-1 text-left">{item.label}</span>
                 <svg
-                  className={["h-4 w-4 transition-transform group-hover:rotate-180", childActive ? "rotate-180" : ""].join(" ")}
+                  className={[
+                    "h-4 w-4 transition-transform group-hover:rotate-180",
+                    childActive ? "rotate-180" : ""
+                  ].join(" ")}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  <path
+                    d="m9 6 6 6-6 6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
                 </svg>
               </div>
             ) : (
               <LoadingLink
                 className={[
-                  "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition",
+                  "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition",
                   active
-                    ? "bg-cyan-50 text-cyan-900 shadow-[inset_0_1px_2px_rgba(8,47,73,0.05)]"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-garnet-tint text-garnet"
+                    : "text-text-2 hover:bg-surface hover:text-text"
                 ].join(" ")}
                 href={item.href as Route}
               >
                 <span
                   className={[
-                    "flex h-10 w-10 items-center justify-center rounded-2xl border transition",
+                    "flex h-10 w-10 items-center justify-center rounded-xl border transition",
                     active
-                      ? "border-cyan-200 bg-white text-cyan-700 shadow-sm"
-                      : "border-transparent bg-slate-50 text-slate-400 group-hover:border-slate-200 group-hover:bg-white group-hover:text-slate-600"
+                      ? "border-garnet/25 bg-card text-garnet shadow-sm"
+                      : "border-transparent bg-surface text-text-2 group-hover:border-border group-hover:bg-card group-hover:text-text"
                   ].join(" ")}
                 >
                   {item.icon}
                 </span>
                 <span className="flex-1 text-left">{item.label}</span>
-                {active ? <div className="h-1.5 w-1.5 rounded-full bg-cyan-600" /> : null}
+                {active ? <div className="h-1.5 w-1.5 rounded-full bg-garnet" /> : null}
               </LoadingLink>
             )}
 
             {hasChildren ? (
-              <div className="invisible absolute left-full top-0 z-30 ml-3 min-w-[200px] translate-x-2 rounded-2xl border border-slate-200 bg-white p-2 opacity-0 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.35)] transition-all group-hover:visible group-hover:translate-x-0 group-hover:opacity-100">
+              <div className="invisible absolute left-full top-0 z-30 ml-3 min-w-[200px] translate-x-2 rounded-xl border border-border bg-card p-2 opacity-0 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.35)] transition-all group-hover:visible group-hover:translate-x-0 group-hover:opacity-100">
                 {item.children?.map((child) => (
                   <LoadingLink
                     className={[
-                      "block rounded-xl px-4 py-3 text-sm font-medium transition",
+                      "block rounded-lg px-4 py-3 text-sm font-medium transition",
                       pathname.startsWith(child.href)
-                        ? "bg-cyan-50 text-cyan-900"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-garnet-tint text-garnet"
+                        : "text-text hover:bg-surface"
                     ].join(" ")}
                     href={child.href}
                     key={child.label}

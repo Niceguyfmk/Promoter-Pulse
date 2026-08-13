@@ -16,11 +16,14 @@ export default async function NewTemplateFormPage() {
   return (
     <main className="space-y-6 lg:space-y-8">
       <div>
-        <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href={"/templates/forms" as Route}>
+        <Link
+          className="text-sm font-bold text-text-2 hover:text-text"
+          href={"/templates/forms" as Route}
+        >
           Back to forms
         </Link>
-        <p className="mt-4 text-sm font-medium text-slate-500">Templates / Forms</p>
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Create form</h1>
+        <p className="mt-4 text-sm font-medium text-text-2">Templates / Forms</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">Create form</h1>
       </div>
 
       <SurveyFormEditor action={createSurveyFormAction} />

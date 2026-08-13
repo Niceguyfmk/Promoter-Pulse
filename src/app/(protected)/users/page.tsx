@@ -46,42 +46,40 @@ export default async function UsersPage() {
     <main className="space-y-6 lg:space-y-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Users
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">Users</h1>
+          <p className="mt-2 text-sm leading-6 text-text-2">
             Invite users and manage platform roles across tenants.
           </p>
         </div>
       </div>
 
-      <section className="rounded-[28px] border border-slate-200 bg-white/80 p-5 shadow-sm sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Invite user</h2>
+      <section className="rounded-2xl border border-border bg-card/80 p-5 shadow-sm sm:p-6">
+        <h2 className="text-lg font-semibold text-text">Invite user</h2>
         <form
           action={inviteUserFromPage}
           className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]"
         >
           <input
-            className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-cyan-700"
+            className="min-h-12 rounded-2xl border border-border bg-card px-4 text-sm outline-none transition focus:border-garnet"
             name="fullName"
             placeholder="Full name"
             required
           />
           <input
-            className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-cyan-700"
+            className="min-h-12 rounded-2xl border border-border bg-card px-4 text-sm outline-none transition focus:border-garnet"
             name="email"
             placeholder="Email"
             required
             type="email"
           />
           <input
-            className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-cyan-700"
+            className="min-h-12 rounded-2xl border border-border bg-card px-4 text-sm outline-none transition focus:border-garnet"
             name="company"
             placeholder="Company"
             required
           />
           <FormSubmitButton
-            className="min-h-12 rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-cyan-950"
+            className="min-h-12 rounded-2xl bg-ink px-5 text-sm font-semibold text-white transition hover:bg-ink-2"
             loadingLabel="Sending..."
             type="submit"
           >
@@ -143,12 +141,12 @@ async function UsersSection({ currentUserId }: { currentUserId: string }) {
 
 function UsersTableSkeleton() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="h-11 bg-slate-100" />
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="h-11 bg-surface" />
       {Array.from({ length: 6 }).map((_, row) => (
-        <div className="flex gap-4 border-t border-slate-100 px-5 py-4" key={row}>
+        <div className="flex gap-4 border-t border-border px-5 py-4" key={row}>
           {Array.from({ length: 5 }).map((_, col) => (
-            <div className="h-4 flex-1 rounded bg-slate-100" key={col} />
+            <div className="h-4 flex-1 rounded bg-surface" key={col} />
           ))}
         </div>
       ))}

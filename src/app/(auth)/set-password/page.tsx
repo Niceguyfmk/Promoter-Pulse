@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 // Note: We'll use a client action or direct supabase call here since it's a password update
 import { createSupabaseBrowserClient } from "@/shared/supabase/client";
 import { ButtonLoader, useLoading } from "@/shared/loading";
+import { SentryLogo } from "@/features/navigation/components/SentryLogo";
 
 export default function SetPasswordPage() {
   const [isPending, startTransition] = useTransition();
@@ -79,29 +80,32 @@ export default function SetPasswordPage() {
 
   return (
     <section className="w-full max-w-sm">
-      <div className="mb-8 text-center sm:text-left">
-        <p className="text-sm font-bold uppercase tracking-widest text-cyan-600">Secure Access</p>
-        <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-slate-950">Set your password</h1>
-        <p className="mt-2 text-slate-600">Choose a strong new password for your account.</p>
+      <div className="mb-8 flex flex-col items-center text-center sm:items-start sm:text-left">
+        <SentryLogo className="mb-5" size={44} />
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-garnet">Secure Access</p>
+        <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-white">
+          Set your password
+        </h1>
+        <p className="mt-2 text-text-2">Choose a strong new password for your account.</p>
       </div>
 
-      <form 
+      <form
         action={handleSubmit}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50"
+        className="space-y-5 rounded-2xl border border-ink-3 bg-ink-2 p-8 shadow-xl shadow-black/30"
       >
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800">
+          <div className="rounded-lg bg-danger-tint p-4 text-sm font-medium text-danger">
             {error}
           </div>
         )}
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="password">
+          <label className="text-sm font-semibold text-text-2" htmlFor="password">
             New Password
           </label>
           <input
             id="password"
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base transition-all outline-none focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
+            className="h-12 w-full rounded-lg border border-ink-3 bg-ink px-4 text-base text-white transition-all outline-none placeholder:text-text-2 focus:border-garnet focus:ring-4 focus:ring-garnet/20 disabled:opacity-50"
             name="password"
             type="password"
             placeholder="••••••••"
@@ -111,12 +115,12 @@ export default function SetPasswordPage() {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="confirmPassword">
+          <label className="text-sm font-semibold text-text-2" htmlFor="confirmPassword">
             Confirm Password
           </label>
           <input
             id="confirmPassword"
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base transition-all outline-none focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
+            className="h-12 w-full rounded-lg border border-ink-3 bg-ink px-4 text-base text-white transition-all outline-none placeholder:text-text-2 focus:border-garnet focus:ring-4 focus:ring-garnet/20 disabled:opacity-50"
             name="confirmPassword"
             type="password"
             placeholder="••••••••"
@@ -126,7 +130,7 @@ export default function SetPasswordPage() {
         </div>
 
         <button
-          className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-xl bg-cyan-900 px-4 text-base font-bold text-white transition-all hover:bg-cyan-950 active:scale-[0.98] disabled:opacity-70"
+          className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-lg bg-garnet px-4 text-base font-bold text-white transition-all hover:bg-garnet-dark active:scale-[0.98] disabled:opacity-70"
           type="submit"
           disabled={isPending || !isSessionReady}
         >

@@ -19,7 +19,7 @@ export function RemoteCheckInForm({ storeId }: { storeId: string }) {
       <input name="storeId" type="hidden" value={storeId} />
       <SubmitButton />
       {state.error ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium leading-5 text-red-700">
+        <p className="rounded-lg bg-danger-tint px-3 py-2 text-xs font-medium leading-5 text-danger">
           {state.error}
         </p>
       ) : null}
@@ -32,7 +32,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold uppercase text-slate-700 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-wait disabled:opacity-70"
+      className="h-12 w-full rounded-lg border border-border bg-card px-3 text-xs font-bold uppercase text-text transition hover:border-garnet/30 hover:bg-garnet-tint hover:text-garnet disabled:cursor-wait disabled:opacity-70"
       disabled={pending}
       type="submit"
     >

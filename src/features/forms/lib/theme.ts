@@ -7,13 +7,13 @@ export const promoterPulseTheme = {
   isPanelless: true,
   cssVariables: {
     ...LayeredLightPanelless.cssVariables,
-    // Teal-500 for main accents (borders on focus, buttons, active states)
-    "--sjs-primary-backcolor": "#14b8a6",
-    "--sjs-primary-backcolor-dark": "#0d9488",
+    // Garnet for main accents (borders on focus, buttons, active states)
+    "--sjs-primary-backcolor": "#8e2a3b",
+    "--sjs-primary-backcolor-dark": "#6e202e",
 
-    // Light teal for the input fields background
+    // Light neutral for the input fields background
     "--sjs-general-backcolor-dim": "#fff",
-    "--sjs-general-backcolor-dim-light": "#f0fdfa",
-    "--sjs-general-backcolor-dim-dark": "#eef699ff",
+    "--sjs-general-backcolor-dim-light": "#f7f7f4",
+    "--sjs-general-backcolor-dim-dark": "#f3ecdf"
   }
 };

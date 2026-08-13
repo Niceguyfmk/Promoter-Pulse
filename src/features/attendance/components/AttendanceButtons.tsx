@@ -18,7 +18,7 @@ export function AttendanceButtons({ shiftId, status }: Props) {
 
   const handleAction = async (type: "in" | "out") => {
     setError(null);
-    
+
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       return;
@@ -37,9 +37,8 @@ export function AttendanceButtons({ shiftId, status }: Props) {
             label: type === "in" ? "Checking in" : "Checking out"
           });
           try {
-            const result = type === "in"
-              ? await checkInAction(formData)
-              : await checkOutAction(formData);
+            const result =
+              type === "in" ? await checkInAction(formData) : await checkOutAction(formData);
 
             if (result.error) {
               setError(result.error);
@@ -64,16 +63,14 @@ export function AttendanceButtons({ shiftId, status }: Props) {
   return (
     <div className="mt-6 space-y-3">
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-800">
-          {error}
-        </div>
+        <div className="rounded-lg bg-danger-tint p-3 text-sm font-medium text-danger">{error}</div>
       )}
-      
+
       {status === "scheduled" && (
         <button
           onClick={() => handleAction("in")}
           disabled={isPending}
-          className="flex h-12 w-full items-center justify-center rounded-xl bg-cyan-900 px-4 text-base font-bold text-white transition-all hover:bg-cyan-950 active:scale-[0.98] disabled:opacity-70"
+          className="flex h-12 w-full items-center justify-center rounded-lg bg-garnet px-4 text-base font-bold text-white transition-all hover:bg-garnet-dark active:scale-[0.98] disabled:opacity-70"
         >
           <ButtonLoader label="Check in" loading={isPending} loadingLabel="Checking in..." />
         </button>
@@ -83,7 +80,7 @@ export function AttendanceButtons({ shiftId, status }: Props) {
         <button
           onClick={() => handleAction("out")}
           disabled={isPending}
-          className="flex h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-base font-bold text-white transition-all hover:bg-slate-950 active:scale-[0.98] disabled:opacity-70"
+          className="flex h-12 w-full items-center justify-center rounded-lg bg-ink px-4 text-base font-bold text-white transition-all hover:bg-ink-2 active:scale-[0.98] disabled:opacity-70"
         >
           <ButtonLoader label="Check out" loading={isPending} loadingLabel="Checking out..." />
         </button>

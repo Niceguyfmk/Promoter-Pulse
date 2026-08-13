@@ -4,7 +4,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { SurveyFormEditor } from "@/features/forms/components/SurveyFormEditor";
-import { deleteSurveyFormAction, updateSurveyFormAction } from "@/features/forms/server/form-actions";
+import {
+  deleteSurveyFormAction,
+  updateSurveyFormAction
+} from "@/features/forms/server/form-actions";
 import { createFormsService } from "@/features/forms/server/forms-service";
 
 export default async function EditTemplateFormPage({
@@ -27,17 +30,22 @@ export default async function EditTemplateFormPage({
     <main className="space-y-6 lg:space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Link className="text-sm font-bold text-slate-600 hover:text-slate-950" href={"/templates/forms" as Route}>
+          <Link
+            className="text-sm font-bold text-text-2 hover:text-text"
+            href={"/templates/forms" as Route}
+          >
             Back to forms
           </Link>
-          <p className="mt-4 text-sm font-medium text-slate-500">Templates / Forms</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">{form.name}</h1>
+          <p className="mt-4 text-sm font-medium text-text-2">Templates / Forms</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">
+            {form.name}
+          </h1>
         </div>
 
         <form action={deleteSurveyFormAction}>
           <input name="formId" type="hidden" value={form.id} />
           <FormSubmitButton
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-sm font-bold text-red-700 transition hover:bg-red-50"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-danger/25 bg-card px-5 text-sm font-bold text-danger transition hover:bg-danger-tint"
             loadingLabel="Deleting..."
             type="submit"
           >

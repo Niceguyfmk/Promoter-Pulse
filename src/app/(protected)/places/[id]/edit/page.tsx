@@ -38,11 +38,7 @@ type StoreRow = {
   geofence_radius_meters: number;
 };
 
-export default async function EditPlacePage({
-  params
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EditPlacePage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, session] = await Promise.all([params, createAuthService().requireSession()]);
 
   if (!session.roles.some((role) => role === "admin" || role === "manager")) {
@@ -65,7 +61,11 @@ export default async function EditPlacePage({
   ] = await Promise.all([
     admin.from("retail_stores").select("*").eq("id", id).single(),
     admin.from("tenants").select("id, name").is("deleted_at", null).order("name"),
-    admin.from("users").select("id, tenant_id, email, full_name").is("deleted_at", null).eq("is_active", true),
+    admin
+      .from("users")
+      .select("id, tenant_id, email, full_name")
+      .is("deleted_at", null)
+      .eq("is_active", true),
     admin.from("user_role_assignments").select("user_id, role_id"),
     admin.from("place_tags").select("id, name").order("name"),
     admin
@@ -125,14 +125,24 @@ export default async function EditPlacePage({
   return (
     <main className="mx-auto max-w-5xl space-y-6 pb-12">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">Edit place</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-text">Edit place</h1>
       </header>
 
       <PlaceForm
         action={updatePlaceFromPage}
         companies={companies}
-        forms={((forms || []) as { id: string; tenant_id: string; name: string; description: string | null; is_active: boolean }[])
-          .filter((form) => session.roles.includes("admin") || form.tenant_id === session.user.tenantId)
+        forms={(
+          (forms || []) as {
+            id: string;
+            tenant_id: string;
+            name: string;
+            description: string | null;
+            is_active: boolean;
+          }[]
+        )
+          .filter(
+            (form) => session.roles.includes("admin") || form.tenant_id === session.user.tenantId
+          )
           .map((form) => ({
             id: form.id,
             tenantId: form.tenant_id,
@@ -160,7 +170,8 @@ export default async function EditPlacePage({
           note: typedStore.note,
           latitude: typedStore.latitude,
           longitude: typedStore.longitude,
-          allowedRadiusMeters: typedStore.allowed_radius_meters ?? typedStore.geofence_radius_meters,
+          allowedRadiusMeters:
+            typedStore.allowed_radius_meters ?? typedStore.geofence_radius_meters,
           companyId: assignedCompanyId,
           promoterIds: ((promoterAssignments || []) as { user_id: string }[]).map(
             (assignment) => assignment.user_id
@@ -168,7 +179,9 @@ export default async function EditPlacePage({
           representativeIds: ((representativeAssignments || []) as { user_id: string }[]).map(
             (assignment) => assignment.user_id
           ),
-          surveyFormIds: ((formAssignments || []) as { form_id: string }[]).map((assignment) => assignment.form_id),
+          surveyFormIds: ((formAssignments || []) as { form_id: string }[]).map(
+            (assignment) => assignment.form_id
+          ),
           tagNames: ((tagAssignments || []) as { tag_id: string }[])
             .map((assignment) => tagNameById.get(assignment.tag_id))
             .filter(Boolean) as string[]
@@ -176,7 +189,7 @@ export default async function EditPlacePage({
         promoters={promoters}
         representatives={representatives}
         submitLabel="Save"
-        tags={((tags || []) as { id: string; name: string }[])}
+        tags={(tags || []) as { id: string; name: string }[]}
       />
     </main>
   );

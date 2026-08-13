@@ -71,7 +71,9 @@ export function PlaceForm({
     initialValue?.promoterIds || []
   );
   const [selectedReps, setSelectedReps] = useState<string[]>(initialValue?.representativeIds || []);
-  const [selectedSurveyForms, setSelectedSurveyForms] = useState<string[]>(initialValue?.surveyFormIds || []);
+  const [selectedSurveyForms, setSelectedSurveyForms] = useState<string[]>(
+    initialValue?.surveyFormIds || []
+  );
   const [selectedTags, setSelectedTags] = useState<string[]>(initialValue?.tagNames || []);
   const [tagSearch, setTagSearch] = useState("");
   const [latitude, setLatitude] = useState(initialValue?.latitude?.toString() || "");
@@ -138,15 +140,15 @@ export function PlaceForm({
       ))}
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+        <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">
             Place Attributes
           </h2>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Status *</label>
+            <label className="text-sm font-medium text-text">Status *</label>
             <select
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-text outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               name="isActive"
               onChange={(event) => setIsActive(event.target.value === "true")}
               value={String(isActive)}
@@ -158,9 +160,9 @@ export function PlaceForm({
 
           {initialValue?.externalCode ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">ID</label>
+              <label className="text-sm font-medium text-text">ID</label>
               <input
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500"
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text-2"
                 readOnly
                 value={initialValue.externalCode}
               />
@@ -170,9 +172,9 @@ export function PlaceForm({
           <Field defaultValue={initialValue?.name || ""} label="Name *" name="name" required />
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Company *</label>
+            <label className="text-sm font-medium text-text">Company *</label>
             <select
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-text outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               onChange={(event) => {
                 setSelectedCompany(event.target.value);
                 setSelectedPromoters([]);
@@ -191,59 +193,58 @@ export function PlaceForm({
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-700">Representatives</p>
-            <div className="grid gap-2 rounded-2xl border border-slate-200 p-3">
+            <p className="text-sm font-medium text-text">Representatives</p>
+            <div className="grid gap-2 rounded-2xl border border-border p-3">
               {filteredRepresentatives.length ? (
                 filteredRepresentatives.map((rep) => (
-                  <label className="flex items-center gap-3 text-sm text-slate-700" key={rep.id}>
+                  <label className="flex items-center gap-3 text-sm text-text" key={rep.id}>
                     <input
                       checked={selectedReps.includes(rep.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-cyan-700"
+                      className="h-4 w-4 rounded border-border text-garnet"
                       onChange={() => setSelectedReps((current) => toggleValue(current, rep.id))}
                       type="checkbox"
                     />
                     <span>
-                      {rep.name} <span className="text-slate-400">{rep.email}</span>
+                      {rep.name} <span className="text-text-2">{rep.email}</span>
                     </span>
                   </label>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">No managers or admins found for this company.</p>
+                <p className="text-sm text-text-2">No managers or admins found for this company.</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-700">Promoters</p>
-            <div className="grid gap-2 rounded-2xl border border-slate-200 p-3">
+            <p className="text-sm font-medium text-text">Promoters</p>
+            <div className="grid gap-2 rounded-2xl border border-border p-3">
               {filteredPromoters.length ? (
                 filteredPromoters.map((promoter) => (
-                  <label className="flex items-center gap-3 text-sm text-slate-700" key={promoter.id}>
+                  <label className="flex items-center gap-3 text-sm text-text" key={promoter.id}>
                     <input
                       checked={selectedPromoters.includes(promoter.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-cyan-700"
+                      className="h-4 w-4 rounded border-border text-garnet"
                       onChange={() =>
                         setSelectedPromoters((current) => toggleValue(current, promoter.id))
                       }
                       type="checkbox"
                     />
                     <span>
-                      {promoter.name} <span className="text-slate-400">{promoter.email}</span>
+                      {promoter.name} <span className="text-text-2">{promoter.email}</span>
                     </span>
                   </label>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">No promoters found for this company.</p>
+                <p className="text-sm text-text-2">No promoters found for this company.</p>
               )}
             </div>
           </div>
-
         </section>
 
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">Tags</h2>
+        <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">Tags</h2>
           <input
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-700"
+            className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-garnet"
             onChange={(event) => setTagSearch(event.target.value)}
             placeholder="Find or add tag"
             value={tagSearch}
@@ -251,7 +252,7 @@ export function PlaceForm({
           <div className="grid gap-3">
             {canAddSearchedTag ? (
               <button
-                className="flex items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                className="flex items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm text-text hover:bg-surface"
                 onClick={() => {
                   setSelectedTags((current) => Array.from(new Set([...current, tagSearch.trim()])));
                   setTagSearch("");
@@ -263,10 +264,10 @@ export function PlaceForm({
               </button>
             ) : null}
             {filteredTags.map((tag) => (
-              <label className="flex items-center gap-3 text-sm text-slate-700" key={tag.id}>
+              <label className="flex items-center gap-3 text-sm text-text" key={tag.id}>
                 <input
                   checked={selectedTags.includes(tag.name)}
-                  className="h-4 w-4 rounded border-slate-300 text-cyan-700"
+                  className="h-4 w-4 rounded border-border text-garnet"
                   onChange={() => setSelectedTags((current) => toggleValue(current, tag.name))}
                   type="checkbox"
                 />
@@ -277,8 +278,8 @@ export function PlaceForm({
         </section>
       </div>
 
-      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+      <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">
           Address Information
         </h2>
         <div className="grid gap-5 md:grid-cols-2">
@@ -286,33 +287,37 @@ export function PlaceForm({
           <Field defaultValue={initialValue?.city || ""} label="City" name="city" />
           <Field defaultValue={initialValue?.state || ""} label="State" name="state" />
           <Field defaultValue={initialValue?.postalCode || ""} label="ZIP" name="postalCode" />
-          <Field defaultValue={initialValue?.countryCode || ""} label="Country Code" name="countryCode" />
+          <Field
+            defaultValue={initialValue?.countryCode || ""}
+            label="Country Code"
+            name="countryCode"
+          />
           <Field defaultValue={initialValue?.country || ""} label="Country" name="country" wide />
         </div>
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+      <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">
           Store GPS Location
         </h2>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Google Maps link or coordinates</label>
+          <label className="text-sm font-medium text-text">Google Maps link or coordinates</label>
           <input
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+            className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
             onChange={(event) => applyMapsCoordinates(event.target.value)}
             placeholder="Paste a Google Maps link or 12.9715987, 77.5945627"
             type="text"
             value={mapsCoordinates}
           />
           {coordinateMessage ? (
-            <p className="text-xs font-medium text-slate-500">{coordinateMessage}</p>
+            <p className="text-xs font-medium text-text-2">{coordinateMessage}</p>
           ) : null}
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Latitude</label>
+            <label className="text-sm font-medium text-text">Latitude</label>
             <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               max="90"
               min="-90"
               name="latitude"
@@ -323,9 +328,9 @@ export function PlaceForm({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Longitude</label>
+            <label className="text-sm font-medium text-text">Longitude</label>
             <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+              className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               max="180"
               min="-180"
               name="longitude"
@@ -344,24 +349,42 @@ export function PlaceForm({
         </div>
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+      <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">
           Contact Information
         </h2>
         <div className="grid gap-5 md:grid-cols-2">
-          <Field defaultValue={initialValue?.contactName || ""} label="Contact name" name="contactName" />
-          <Field defaultValue={initialValue?.contactTitle || ""} label="Contact title" name="contactTitle" />
-          <Field defaultValue={initialValue?.contactEmail || ""} label="Email" name="contactEmail" type="email" />
-          <Field defaultValue={initialValue?.website || ""} label="Website" name="website" type="url" />
+          <Field
+            defaultValue={initialValue?.contactName || ""}
+            label="Contact name"
+            name="contactName"
+          />
+          <Field
+            defaultValue={initialValue?.contactTitle || ""}
+            label="Contact title"
+            name="contactTitle"
+          />
+          <Field
+            defaultValue={initialValue?.contactEmail || ""}
+            label="Email"
+            name="contactEmail"
+            type="email"
+          />
+          <Field
+            defaultValue={initialValue?.website || ""}
+            label="Website"
+            name="website"
+            type="url"
+          />
           <Field defaultValue={initialValue?.phone || ""} label="Phone" name="phone" />
           <Field defaultValue={initialValue?.cellPhone || ""} label="Cell phone" name="cellPhone" />
         </div>
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">Notes</h2>
+      <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">Notes</h2>
         <textarea
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+          className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
           defaultValue={initialValue?.note || ""}
           name="note"
           placeholder="Add any additional notes here..."
@@ -369,30 +392,32 @@ export function PlaceForm({
         />
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+      <section className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="border-b border-border pb-3 text-lg font-semibold text-text">
           Assigned Forms
         </h2>
-        <div className="grid gap-3 rounded-2xl border border-slate-200 p-4">
+        <div className="grid gap-3 rounded-2xl border border-border p-4">
           {filteredForms.length ? (
             filteredForms.map((form) => (
-              <label className="flex items-start gap-3 text-sm text-slate-700" key={form.id}>
+              <label className="flex items-start gap-3 text-sm text-text" key={form.id}>
                 <input
                   checked={selectedSurveyForms.includes(form.id)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-700"
-                  onChange={() => setSelectedSurveyForms((current) => toggleValue(current, form.id))}
+                  className="mt-1 h-4 w-4 rounded border-border text-garnet"
+                  onChange={() =>
+                    setSelectedSurveyForms((current) => toggleValue(current, form.id))
+                  }
                   type="checkbox"
                 />
                 <span>
-                  <span className="block font-medium text-slate-900">{form.name}</span>
+                  <span className="block font-medium text-text">{form.name}</span>
                   {form.description ? (
-                    <span className="mt-1 block text-slate-500">{form.description}</span>
+                    <span className="mt-1 block text-text-2">{form.description}</span>
                   ) : null}
                 </span>
               </label>
             ))
           ) : (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-text-2">
               No active forms available for this company yet. Create them in Reports first.
             </p>
           )}
@@ -401,13 +426,13 @@ export function PlaceForm({
 
       <div className="flex items-center justify-end gap-3">
         <LoadingLink
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text hover:bg-surface"
           href="/places"
         >
           Discard
         </LoadingLink>
         <FormSubmitButton
-          className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700"
+          className="rounded-lg bg-garnet px-6 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-garnet-dark"
           loadingLabel={initialValue?.id ? "Saving..." : "Creating..."}
           type="submit"
         >
@@ -435,9 +460,9 @@ function Field({
 }) {
   return (
     <div className={["space-y-1.5", wide ? "md:col-span-2" : ""].join(" ")}>
-      <label className="text-sm font-medium text-slate-700">{label}</label>
+      <label className="text-sm font-medium text-text">{label}</label>
       <input
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+        className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
         defaultValue={defaultValue}
         name={name}
         required={required}

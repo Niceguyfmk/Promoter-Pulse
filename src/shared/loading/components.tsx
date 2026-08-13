@@ -29,14 +29,13 @@ export function Spinner({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export function ButtonLoader({
-  className,
-  label,
-  loading,
-  loadingLabel
-}: ButtonLoaderProps) {
+export function ButtonLoader({ className, label, loading, loadingLabel }: ButtonLoaderProps) {
   return (
-    <span className={["inline-flex items-center justify-center gap-2", className].filter(Boolean).join(" ")}>
+    <span
+      className={["inline-flex items-center justify-center gap-2", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {loading ? <Spinner /> : null}
       <span>{loading ? loadingLabel || label : label}</span>
     </span>
@@ -65,7 +64,11 @@ export function FormSubmitButton({
       disabled={disabled || pending}
       type={props.type ?? "submit"}
     >
-      {pending ? <ButtonLoader label={label} loading {...(loadingLabel ? { loadingLabel } : {})} /> : children}
+      {pending ? (
+        <ButtonLoader label={label} loading {...(loadingLabel ? { loadingLabel } : {})} />
+      ) : (
+        children
+      )}
     </button>
   );
 }
@@ -78,7 +81,7 @@ export function PageLoader({ label = "Loading workspace" }: { label?: string }) 
           <div className="h-3 w-32 rounded-full bg-slate-200 loading-shimmer" />
           <div className="h-10 w-64 rounded-2xl bg-slate-200 loading-shimmer" />
         </div>
-        <div className="hidden h-8 w-24 rounded-full bg-white shadow-sm loading-shimmer sm:block" />
+        <div className="hidden h-8 w-24 rounded-full bg-card shadow-sm loading-shimmer sm:block" />
       </div>
       <div className="sr-only" role="status">
         {label}
@@ -101,9 +104,9 @@ export function LoadingOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/8 backdrop-blur-[1px]">
-      <div className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.5)]">
-        <Spinner className="h-4 w-4 text-cyan-800" />
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-ink/8 backdrop-blur-[1px]">
+      <div className="inline-flex items-center gap-3 rounded-xl border border-border bg-card/95 px-4 py-3 text-sm font-semibold text-text shadow-[0_18px_50px_-30px_rgba(15,23,42,0.5)]">
+        <Spinner className="h-4 w-4 text-garnet" />
         {label}
       </div>
     </div>
@@ -121,7 +124,7 @@ export function RouteLoader() {
         routeLoading ? "opacity-100" : "opacity-0"
       ].join(" ")}
     >
-      <div className="h-full w-full origin-left bg-cyan-700 route-progress" />
+      <div className="h-full w-full origin-left bg-garnet route-progress" />
     </div>
   );
 }
@@ -130,7 +133,10 @@ export function BackgroundOperationIndicator() {
   const { operations } = useLoading();
   const fetching = useIsFetching();
   const mutating = useIsMutating();
-  const count = operations.filter((operation) => operation.id !== "route-transition").length + fetching + mutating;
+  const count =
+    operations.filter((operation) => operation.id !== "route-transition").length +
+    fetching +
+    mutating;
   const visible = useDelayedVisible(count > 0);
 
   if (!visible) {
@@ -138,8 +144,8 @@ export function BackgroundOperationIndicator() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-[70] hidden items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-600 shadow-[0_18px_45px_-28px_rgba(15,23,42,0.45)] backdrop-blur sm:flex">
-      <span className="h-2 w-2 rounded-full bg-cyan-700 loading-pulse" />
+    <div className="fixed bottom-4 right-4 z-[70] hidden items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-2 text-xs font-semibold text-text-2 shadow-[0_18px_45px_-28px_rgba(15,23,42,0.45)] backdrop-blur sm:flex">
+      <span className="h-2 w-2 rounded-full bg-garnet loading-pulse" />
       Syncing
     </div>
   );
@@ -179,7 +185,11 @@ export function LoadingShell({ children }: { children: ReactNode }) {
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <section className={["rounded-2xl border border-slate-200 bg-white p-5 shadow-sm", className].filter(Boolean).join(" ")}>
+    <section
+      className={["rounded-2xl border border-border bg-card p-5 shadow-sm", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="space-y-4">
         <div className="h-4 w-1/3 rounded-full bg-slate-200 loading-shimmer" />
         <div className="h-7 w-2/3 rounded-xl bg-slate-200 loading-shimmer" />
@@ -195,13 +205,13 @@ export function SkeletonCard({ className }: { className?: string }) {
 
 export function SkeletonTable({ rows = 6 }: { rows?: number }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="grid grid-cols-4 gap-4 border-b border-slate-100 bg-slate-50 px-5 py-4">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="grid grid-cols-4 gap-4 border-b border-border bg-surface px-5 py-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div className="h-3 rounded-full bg-slate-200 loading-shimmer" key={index} />
+          <div className="h-3 rounded-full bg-border loading-shimmer" key={index} />
         ))}
       </div>
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-border">
         {Array.from({ length: rows }).map((_, row) => (
           <div className="grid grid-cols-4 gap-4 px-5 py-4" key={row}>
             {Array.from({ length: 4 }).map((__, column) => (
@@ -214,11 +224,7 @@ export function SkeletonTable({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function LoadingLink({
-  href,
-  onClick,
-  ...props
-}: ComponentProps<typeof Link>) {
+export function LoadingLink({ href, onClick, ...props }: ComponentProps<typeof Link>) {
   const pathname = usePathname();
   const { startRouteTransition } = useLoading();
   const hrefString = typeof href === "string" ? href : href.toString();

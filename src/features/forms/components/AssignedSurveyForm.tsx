@@ -128,7 +128,7 @@ export function AssignedSurveyForm({
 
   if (forms.length === 0) {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+      <div className="rounded-xl border border-warning/30 bg-warning-tint p-4 text-sm leading-6 text-warning">
         No forms are assigned to this place yet. Ask your manager to assign a form before submitting
         a visit report.
       </div>
@@ -138,9 +138,9 @@ export function AssignedSurveyForm({
   return (
     <div className="space-y-5">
       <label className="block">
-        <span className="text-sm font-bold text-slate-800">Assigned form</span>
+        <span className="text-sm font-bold text-text">Assigned form</span>
         <select
-          className="mt-3 h-11 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          className="mt-3 h-11 w-full rounded-lg border border-border px-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
           onChange={(event) => setSelectedFormId(event.target.value)}
           value={effectiveSelectedFormId}
         >
@@ -153,17 +153,17 @@ export function AssignedSurveyForm({
       </label>
 
       {selectedForm?.description ? (
-        <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+        <p className="rounded-xl bg-surface px-4 py-3 text-sm leading-6 text-text-2">
           {selectedForm.description}
         </p>
       ) : null}
 
       {isMounted && surveyModel ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="overflow-hidden rounded-xl border border-border bg-card p-4">
           <Survey key={selectedForm?.id ?? "survey"} model={surveyModel} />
         </div>
       ) : (
-        <div className="min-h-40 rounded-2xl border border-slate-200 bg-slate-50" />
+        <div className="min-h-40 rounded-xl border border-border bg-surface" />
       )}
     </div>
   );

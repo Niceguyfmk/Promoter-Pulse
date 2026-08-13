@@ -18,10 +18,10 @@ type Props = {
 };
 
 const statusStyles: Record<ShiftStatus, string> = {
-  scheduled: "bg-blue-50 text-blue-700",
-  checked_in: "bg-emerald-50 text-emerald-700",
-  checked_out: "bg-slate-100 text-slate-600",
-  missed: "bg-rose-50 text-rose-700"
+  scheduled: "bg-info-tint text-info",
+  checked_in: "bg-success-tint text-success",
+  checked_out: "bg-surface text-text-2",
+  missed: "bg-danger-tint text-danger"
 };
 
 export function ShiftCard({ shift }: Props) {
@@ -31,7 +31,7 @@ export function ShiftCard({ shift }: Props) {
   const endTime = endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_64px_-36px_rgba(15,23,42,0.35)] sm:p-7">
+    <article className="overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_-28px_rgba(15,23,42,0.3)] sm:p-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <span
@@ -43,16 +43,21 @@ export function ShiftCard({ shift }: Props) {
             {shift.status.replace("_", " ")}
           </span>
 
-          <h3 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">
+          <h3 className="mt-5 text-3xl font-semibold tracking-tight text-text">
             {shift.retail_stores?.name || "Unknown Store"}
           </h3>
-          <p className="mt-2 text-base text-slate-500">
+          <p className="mt-2 text-base text-text-2">
             {shift.retail_stores?.address || "No address provided"}
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-5 text-slate-700">
+          <div className="mt-7 flex flex-wrap items-center gap-5 text-text">
             <div className="flex items-center gap-2.5">
-              <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="h-5 w-5 text-text-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                   strokeLinecap="round"
@@ -68,7 +73,7 @@ export function ShiftCard({ shift }: Props) {
         </div>
 
         <div className="text-left sm:text-right">
-          <p className="text-lg font-medium text-slate-500">
+          <p className="text-lg font-medium text-text-2">
             {startDate.toLocaleDateString(undefined, {
               weekday: "short",
               day: "numeric",

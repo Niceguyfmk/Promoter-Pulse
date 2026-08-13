@@ -14,10 +14,10 @@ const titles: Array<{ prefix: string; title: string }> = [
 
 export function MobilePageHeader() {
   const pathname = usePathname();
-  const title = titles.find((item) => pathname.startsWith(item.prefix))?.title ?? "Promoter Pulse";
+  const title = titles.find((item) => pathname.startsWith(item.prefix))?.title ?? "SentryAI";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-teal-700/20 bg-teal-500 text-white shadow-sm lg:hidden">
+    <header className="sticky top-0 z-30 border-b border-ink-3 bg-ink text-white shadow-sm lg:hidden">
       <div className="flex h-[72px] items-center justify-between px-5">
         <h1 className="text-[28px] font-semibold tracking-tight">{title}</h1>
         <button

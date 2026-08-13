@@ -3,6 +3,7 @@
 import { useTransition, useState, useEffect } from "react";
 import { signIn } from "@/features/auth/server/auth-actions";
 import { ButtonLoader } from "@/shared/loading";
+import { SentryLogo } from "@/features/navigation/components/SentryLogo";
 
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
@@ -26,29 +27,30 @@ export default function LoginPage() {
 
   return (
     <section className="w-full max-w-sm">
-      <div className="mb-8 text-center sm:text-left">
-        <p className="text-sm font-bold uppercase tracking-widest text-cyan-600">Promoter Pulse</p>
-        <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-slate-950">Welcome back</h1>
-        <p className="mt-2 text-slate-600">Sign in to manage your retail operations</p>
+      <div className="mb-8 flex flex-col items-center text-center sm:items-start sm:text-left">
+        <SentryLogo className="mb-5" size={44} />
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-garnet">SentryAI</p>
+        <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-white">Welcome back</h1>
+        <p className="mt-2 text-text-2">Sign in to run your field operations</p>
       </div>
 
-      <form 
+      <form
         action={handleSubmit}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50"
+        className="space-y-5 rounded-2xl border border-ink-3 bg-ink-2 p-8 shadow-xl shadow-black/30"
       >
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800">
+          <div className="rounded-lg bg-danger-tint p-4 text-sm font-medium text-danger">
             {error}
           </div>
         )}
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="email">
+          <label className="text-sm font-semibold text-text-2" htmlFor="email">
             Email address
           </label>
           <input
             id="email"
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base transition-all outline-none focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
+            className="h-12 w-full rounded-lg border border-ink-3 bg-ink px-4 text-base text-white transition-all outline-none placeholder:text-text-2 focus:border-garnet focus:ring-4 focus:ring-garnet/20 disabled:opacity-50"
             inputMode="email"
             name="email"
             type="email"
@@ -61,16 +63,16 @@ export default function LoginPage() {
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="password">
+            <label className="text-sm font-semibold text-text-2" htmlFor="password">
               Password
             </label>
-            <a href="#" className="text-xs font-semibold text-cyan-700 hover:text-cyan-800">
+            <a href="#" className="text-xs font-semibold text-brass hover:text-brass/80">
               Forgot password?
             </a>
           </div>
           <input
             id="password"
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 text-base transition-all outline-none focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
+            className="h-12 w-full rounded-lg border border-ink-3 bg-ink px-4 text-base text-white transition-all outline-none placeholder:text-text-2 focus:border-garnet focus:ring-4 focus:ring-garnet/20 disabled:opacity-50"
             name="password"
             type="password"
             autoComplete="current-password"
@@ -81,7 +83,7 @@ export default function LoginPage() {
         </div>
 
         <button
-          className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-xl bg-cyan-900 px-4 text-base font-bold text-white transition-all hover:bg-cyan-950 active:scale-[0.98] disabled:opacity-70"
+          className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-lg bg-garnet px-4 text-base font-bold text-white transition-all hover:bg-garnet-dark active:scale-[0.98] disabled:opacity-70"
           type="submit"
           disabled={isPending}
         >
@@ -89,9 +91,9 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-slate-600">
+      <p className="mt-8 text-center text-sm text-text-2">
         Don&apos;t have an account?{" "}
-        <a href="/signup" className="font-bold text-cyan-700 hover:text-cyan-800">
+        <a href="/signup" className="font-bold text-brass hover:text-brass/80">
           Create one now
         </a>
       </p>

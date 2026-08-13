@@ -54,15 +54,15 @@ export function SurveyFormEditor({
   }, [schemaText]);
 
   return (
-    <section className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+    <section className="grid gap-6 rounded-3xl border border-border bg-card p-6 shadow-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <form action={action} className="space-y-5">
         {initialValue?.id ? <input name="formId" type="hidden" value={initialValue.id} /> : null}
 
         <div className="grid gap-5 md:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Form name</span>
+            <span className="text-sm font-semibold text-text">Form name</span>
             <input
-              className="mt-2 h-11 w-full rounded-xl border border-slate-300 px-4 text-sm outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+              className="mt-2 h-11 w-full rounded-xl border border-border px-4 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               defaultValue={initialValue?.name ?? ""}
               name="name"
               placeholder="Retail visit checklist"
@@ -71,9 +71,9 @@ export function SurveyFormEditor({
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Status</span>
+            <span className="text-sm font-semibold text-text">Status</span>
             <select
-              className="mt-2 h-11 w-full rounded-xl border border-slate-300 px-4 text-sm outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+              className="mt-2 h-11 w-full rounded-xl border border-border px-4 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               defaultValue={String(initialValue?.isActive ?? true)}
               name="isActive"
             >
@@ -84,9 +84,9 @@ export function SurveyFormEditor({
         </div>
 
         <label className="block">
-          <span className="text-sm font-semibold text-slate-800">Description</span>
+          <span className="text-sm font-semibold text-text">Description</span>
           <textarea
-            className="mt-2 min-h-24 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600"
+            className="mt-2 min-h-24 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
             defaultValue={initialValue?.description ?? ""}
             name="description"
             placeholder="What this form is for and when promoters should use it."
@@ -94,9 +94,9 @@ export function SurveyFormEditor({
         </label>
 
         <label className="block">
-          <span className="text-sm font-semibold text-slate-800">SurveyJS JSON</span>
+          <span className="text-sm font-semibold text-text">SurveyJS JSON</span>
           <textarea
-            className="mt-2 min-h-[420px] w-full rounded-2xl border border-slate-300 bg-slate-950 px-4 py-4 font-mono text-sm text-slate-100 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+            className="mt-2 min-h-[420px] w-full rounded-2xl border border-border bg-ink px-4 py-4 font-mono text-sm text-white/85 outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
             name="schemaJson"
             onChange={(event) => setSchemaText(event.target.value)}
             spellCheck={false}
@@ -104,10 +104,10 @@ export function SurveyFormEditor({
           />
         </label>
 
-        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3 text-sm text-text-2">
           <span>Create or edit the form in SurveyJS Creator, then paste the JSON here.</span>
           <a
-            className="font-semibold text-cyan-800 underline underline-offset-4"
+            className="font-semibold text-garnet underline underline-offset-4"
             href="https://surveyjs.io/create-free-survey"
             rel="noreferrer"
             target="_blank"
@@ -118,7 +118,7 @@ export function SurveyFormEditor({
 
         <div className="flex items-center justify-end gap-3">
           <FormSubmitButton
-            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink-2"
             loadingLabel={initialValue?.id ? "Saving..." : "Creating..."}
             type="submit"
           >
@@ -127,21 +127,21 @@ export function SurveyFormEditor({
         </div>
       </form>
 
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-          <div className="mb-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Preview</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-900">Rendered form</h2>
-          </div>
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-2">Preview</p>
+          <h2 className="mt-2 text-xl font-semibold text-text">Rendered form</h2>
+        </div>
 
-          {previewState.schema ? (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4">
-              <SurveyPreview readOnly={false} schema={previewState.schema} />
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {previewState.error || "Invalid schema"}
-            </div>
-          )}
+        {previewState.schema ? (
+          <div className="overflow-hidden rounded-2xl border border-border bg-card p-4">
+            <SurveyPreview readOnly={false} schema={previewState.schema} />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-danger/25 bg-danger-tint p-4 text-sm text-danger">
+            {previewState.error || "Invalid schema"}
+          </div>
+        )}
       </div>
     </section>
   );

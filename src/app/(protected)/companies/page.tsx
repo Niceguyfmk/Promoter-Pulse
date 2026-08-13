@@ -81,10 +81,8 @@ export default async function CompaniesPage() {
     <main className="space-y-6 lg:space-y-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Companies
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">Companies</h1>
+          <p className="mt-2 text-sm leading-6 text-text-2">
             Manage company names and access status across tenants.
           </p>
         </div>

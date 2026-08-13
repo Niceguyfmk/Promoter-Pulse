@@ -73,8 +73,8 @@ export function RemoteVisitWorkspace({
 
   return (
     <main className="mx-auto max-w-6xl space-y-5 pb-28">
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="relative min-h-[210px] bg-[linear-gradient(rgba(15,23,42,0.58),rgba(15,23,42,0.5)),url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="relative min-h-[210px] bg-[linear-gradient(rgba(20,22,26,0.75),rgba(20,22,26,0.55)),url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center">
           <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-7">
             <LoadingLink
               className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white backdrop-blur"
@@ -90,7 +90,7 @@ export function RemoteVisitWorkspace({
               </svg>
             </LoadingLink>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-100">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brass">
                 Remote check-in
               </p>
               <h1 className="mt-2 text-2xl font-bold text-white sm:text-4xl">{store.name}</h1>
@@ -102,12 +102,12 @@ export function RemoteVisitWorkspace({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 border-t border-teal-500 bg-teal-500 text-white">
+        <div className="grid grid-cols-3 border-t border-ink-3 bg-ink text-white">
           <button className="h-14 text-xs font-bold uppercase" type="button">
             Schedule
           </button>
           <button
-            className="h-14 border-x border-white/30 text-xs font-bold uppercase"
+            className="h-14 border-x border-white/15 text-xs font-bold uppercase"
             type="button"
           >
             Contact
@@ -118,14 +118,14 @@ export function RemoteVisitWorkspace({
         </div>
 
         <div className="p-5 text-center sm:p-8">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-text-2">
             {report.checked_out_at ? "This visit has been checked out." : "You are now checked in."}
           </p>
-          <p className="mt-2 text-sm font-bold text-slate-700">
+          <p className="mt-2 text-sm font-bold text-text">
             Add photos, fill a form, and document your work.
           </p>
           {report.status === "rejected" && report.review_note ? (
-            <p className="mx-auto mt-4 max-w-2xl rounded-xl bg-red-50 p-4 text-sm leading-6 text-red-700">
+            <p className="mx-auto mt-4 max-w-2xl rounded-lg bg-danger-tint p-4 text-sm leading-6 text-danger">
               {report.review_note}
             </p>
           ) : null}
@@ -150,7 +150,7 @@ export function RemoteVisitWorkspace({
       </form>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           <div className="p-5 sm:p-7">
             <AssignedSurveyForm
               forms={assignedForms}
@@ -172,7 +172,7 @@ export function RemoteVisitWorkspace({
           />
 
           <button
-            className="h-12 w-full rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+            className="h-12 w-full rounded-lg bg-surface px-4 text-sm font-bold text-text transition hover:bg-border"
             form={visitFormId}
             name="intent"
             type="submit"
@@ -186,7 +186,7 @@ export function RemoteVisitWorkspace({
             />
           </button>
           <button
-            className={`h-12 w-full rounded-xl px-4 text-sm font-bold text-white shadow-sm transition ${hasSavedForm ? "bg-red-500 hover:bg-red-600" : "bg-red-300 cursor-not-allowed"}`}
+            className={`h-12 w-full rounded-lg px-4 text-sm font-bold text-white shadow-sm transition ${hasSavedForm ? "bg-danger hover:bg-danger/90" : "bg-danger/40 cursor-not-allowed"}`}
             disabled={!hasSavedForm || pendingIntent !== null}
             form={visitFormId}
             name="intent"
@@ -234,23 +234,18 @@ function VisitTimer({
   }, [checkedOutAt, startedAt]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Current visit</p>
-      <div className="mt-4 flex items-center gap-3 text-slate-700">
-        <svg
-          className="h-5 w-5 text-slate-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-text-2">Current visit</p>
+      <div className="mt-4 flex items-center gap-3 text-text">
+        <svg className="h-5 w-5 text-text-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="8" strokeWidth="1.8" />
           <path d="M12 8v5l3 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
         </svg>
         <span className="font-mono text-lg">{formatDuration(elapsed)}</span>
       </div>
-      <p className="mt-4 text-sm leading-6 text-slate-500">
+      <p className="mt-4 text-sm leading-6 text-text-2">
         {checkedOutAt ? "Checked out from" : "Checked in at"}{" "}
-        <span className="font-semibold text-slate-700">{storeName}</span>
+        <span className="font-semibold text-text">{storeName}</span>
       </p>
     </section>
   );

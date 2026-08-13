@@ -30,32 +30,32 @@ const statusConfig: Record<
   }
 > = {
   done: {
-    border: "border-teal-500",
-    dot: "bg-teal-500",
+    border: "border-success",
+    dot: "bg-success",
     label: "Done",
-    marker: "bg-teal-500 text-white",
-    text: "text-teal-700"
+    marker: "bg-success text-white",
+    text: "text-success"
   },
   upcoming: {
-    border: "border-orange-400",
-    dot: "bg-orange-400",
+    border: "border-warning",
+    dot: "bg-warning",
     label: "Upcoming",
-    marker: "bg-orange-400 text-white",
-    text: "text-orange-700"
+    marker: "bg-warning text-white",
+    text: "text-warning"
   },
   missed: {
-    border: "border-red-500",
-    dot: "bg-red-500",
+    border: "border-danger",
+    dot: "bg-danger",
     label: "Missed",
-    marker: "bg-red-500 text-white",
-    text: "text-red-700"
+    marker: "bg-danger text-white",
+    text: "text-danger"
   },
   unplanned: {
-    border: "border-blue-500",
-    dot: "bg-blue-500",
+    border: "border-info",
+    dot: "bg-info",
     label: "Unplanned",
-    marker: "bg-blue-500 text-white",
-    text: "text-blue-700"
+    marker: "bg-info text-white",
+    text: "text-info"
   }
 };
 
@@ -73,29 +73,27 @@ export default async function SchedulePage({
     <main className="space-y-6 lg:space-y-8">
       <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Schedule
-          </h1>
+          <h1 className="text-4xl font-semibold tracking-tight text-text sm:text-5xl">Schedule</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 xl:justify-end">
           <Legend />
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-1 shadow-sm">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1 shadow-sm">
             <a
               aria-label="Previous month"
-              className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
+              className="grid h-9 w-9 place-items-center rounded-lg text-text-2 transition hover:bg-surface hover:text-text"
               href={monthHref(previousMonth)}
             >
               <span aria-hidden="true" className="text-xl leading-none">
                 &lt;
               </span>
             </a>
-            <p className="min-w-32 text-center text-lg font-semibold text-slate-950">
+            <p className="min-w-32 text-center text-lg font-semibold text-text">
               {formatMonthHeading(visibleMonth)}
             </p>
             <a
               aria-label="Next month"
-              className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
+              className="grid h-9 w-9 place-items-center rounded-lg text-text-2 transition hover:bg-surface hover:text-text"
               href={monthHref(nextMonth)}
             >
               <span aria-hidden="true" className="text-xl leading-none">
@@ -123,8 +121,8 @@ async function CalendarGrid({ visibleMonth }: { visibleMonth: Date }) {
   const eventsByDay = groupEventsByDay(schedule.events);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="grid grid-cols-7 border-b border-border bg-surface text-center text-xs font-bold uppercase tracking-[0.16em] text-text-2">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((weekday) => (
           <div className="py-3" key={weekday}>
             {weekday}
@@ -139,10 +137,10 @@ async function CalendarGrid({ visibleMonth }: { visibleMonth: Date }) {
           return (
             <div
               className={[
-                "min-h-32 border-b border-r border-slate-200 p-2 last:border-r-0 sm:min-h-36",
+                "min-h-32 border-b border-r border-border p-2 last:border-r-0 sm:min-h-36",
                 day.isWeekEnd ? "border-r-0" : "",
-                day.isToday ? "bg-yellow-50" : "",
-                !day.isCurrentMonth ? "bg-slate-50/60 text-slate-300" : "text-slate-700"
+                day.isToday ? "bg-brass-tint" : "",
+                !day.isCurrentMonth ? "bg-surface/60 text-text-2/50" : "text-text"
               ].join(" ")}
               key={day.dateKey}
             >
@@ -150,16 +148,13 @@ async function CalendarGrid({ visibleMonth }: { visibleMonth: Date }) {
                 <span
                   className={[
                     "text-xs tabular-nums",
-                    day.isCurrentMonth ? "text-slate-500" : "text-slate-300"
+                    day.isCurrentMonth ? "text-text-2" : "text-text-2/50"
                   ].join(" ")}
                 >
                   {day.date.getDate()}
                 </span>
                 {events.length === 0 ? (
-                  <span
-                    aria-hidden="true"
-                    className="text-lg font-bold leading-none text-slate-200"
-                  >
+                  <span aria-hidden="true" className="text-lg font-bold leading-none text-border">
                     +
                   </span>
                 ) : null}
@@ -170,7 +165,7 @@ async function CalendarGrid({ visibleMonth }: { visibleMonth: Date }) {
                   <CalendarEvent event={event} key={`${event.source}-${event.id}`} />
                 ))}
                 {events.length > 3 ? (
-                  <p className="truncate rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">
+                  <p className="truncate rounded-md bg-surface px-2 py-1 text-xs font-semibold text-text-2">
                     +{events.length - 3} more
                   </p>
                 ) : null}
@@ -185,8 +180,8 @@ async function CalendarGrid({ visibleMonth }: { visibleMonth: Date }) {
 
 function CalendarGridSkeleton() {
   return (
-    <section className="animate-pulse overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+    <section className="animate-pulse overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="grid grid-cols-7 border-b border-border bg-surface text-center text-xs font-bold uppercase tracking-[0.16em] text-text-2">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((weekday) => (
           <div className="py-3" key={weekday}>
             {weekday}
@@ -196,7 +191,7 @@ function CalendarGridSkeleton() {
       <div className="grid grid-cols-7">
         {Array.from({ length: 35 }).map((_, index) => (
           <div
-            className="min-h-32 border-b border-r border-slate-200 bg-slate-50 last:border-r-0 sm:min-h-36"
+            className="min-h-32 border-b border-r border-border bg-surface last:border-r-0 sm:min-h-36"
             key={index}
           />
         ))}
@@ -213,7 +208,7 @@ function Legend() {
 
         return (
           <span
-            className={`inline-flex h-8 items-center gap-2 rounded-full border bg-white px-3 text-xs font-bold uppercase ${config.border} ${config.text}`}
+            className={`inline-flex h-8 items-center gap-2 rounded-full border bg-card px-3 text-xs font-bold uppercase ${config.border} ${config.text}`}
             key={status}
           >
             <span className={`h-3.5 w-3.5 rounded-full ${config.dot}`} />

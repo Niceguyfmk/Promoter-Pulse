@@ -20,9 +20,9 @@ export default async function PlacesPage() {
   return (
     <main className="space-y-6 lg:space-y-8">
       <section className="space-y-4">
-        <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm border border-slate-200 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col gap-4 rounded-xl bg-card p-4 shadow-sm border border-border xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-1 items-center gap-4">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <button className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text hover:bg-surface">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -36,7 +36,7 @@ export default async function PlacesPage() {
 
             <div className="relative flex-1 max-w-md">
               <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -51,11 +51,11 @@ export default async function PlacesPage() {
               <input
                 type="text"
                 placeholder="Search for places by id, name or address"
-                className="w-full rounded-lg border border-slate-300 pl-10 pr-4 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                className="w-full rounded-lg border border-border pl-10 pr-4 py-2 text-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet"
               />
             </div>
 
-            <button className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <button className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text hover:bg-surface">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -68,16 +68,16 @@ export default async function PlacesPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-4 border-t border-slate-200 pt-4 xl:border-none xl:pt-0">
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+          <div className="flex items-center gap-4 border-t border-border pt-4 xl:border-none xl:pt-0">
+            <label className="flex items-center gap-2 text-sm text-text cursor-pointer">
               <input
                 type="checkbox"
-                className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                className="rounded border-border text-garnet focus:ring-garnet"
               />
               Show inactive places
             </label>
 
-            <button className="p-2 text-slate-400 hover:text-slate-600 rounded-lg border border-slate-300">
+            <button className="p-2 text-text-2 hover:text-text rounded-lg border border-border">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -88,11 +88,9 @@ export default async function PlacesPage() {
               </svg>
             </button>
 
-            <button className="text-sm font-medium text-slate-600 hover:text-slate-900">
-              Clear
-            </button>
+            <button className="text-sm font-medium text-text-2 hover:text-text">Clear</button>
 
-            <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            <button className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink-2">
               Apply
             </button>
           </div>
@@ -100,7 +98,7 @@ export default async function PlacesPage() {
 
         {canManagePlaces && (
           <div className="flex justify-end gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
+            <button className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-text hover:bg-surface shadow-sm">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -112,7 +110,7 @@ export default async function PlacesPage() {
               Import
             </button>
 
-            <button className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
+            <button className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-text hover:bg-surface shadow-sm">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -126,7 +124,7 @@ export default async function PlacesPage() {
 
             <Link
               href="/places/new"
-              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 shadow-sm transition"
+              className="flex items-center gap-2 rounded-lg bg-garnet px-4 py-2 text-sm font-medium text-white hover:bg-garnet-dark shadow-sm transition"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -162,16 +160,16 @@ async function StoresGrid({
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+          <h2 className="text-2xl font-semibold tracking-tight text-text">
             {isPromoter ? "Assigned places" : "Retail Locations"}
           </h2>
           {isPromoter ? (
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-text-2">
               Use GPS check-in when you are at the assigned store.
             </p>
           ) : null}
         </div>
-        <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 shadow-sm">
+        <span className="rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-text-2">
           {stores.length} stores
         </span>
       </div>
@@ -223,8 +221,8 @@ function StoresGridSkeleton({ isPromoter }: { isPromoter: boolean }) {
 
 function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
-    <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/75 px-8 py-16 text-center shadow-sm">
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-slate-400">
+    <div className="rounded-2xl border border-dashed border-border bg-card/75 px-8 py-16 text-center shadow-sm">
+      <div className="mx-auto grid h-16 w-16 place-items-center rounded-xl bg-surface text-text-2">
         <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             d="M8 2v3m8-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1Z"
@@ -234,8 +232,8 @@ function EmptyState({ title, description }: { title: string; description?: strin
           />
         </svg>
       </div>
-      <h3 className="mt-5 text-xl font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-500">
+      <h3 className="mt-5 text-xl font-semibold text-text">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-text-2">
         {description || "Contact your manager for updates or assignments."}
       </p>
     </div>

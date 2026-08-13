@@ -36,7 +36,7 @@ export function SurveyPreview({
   }, [answers, readOnly, schema]);
 
   if (!isMounted) {
-    return <div className="min-h-32 rounded-2xl bg-slate-50" />;
+    return <div className="min-h-32 rounded-2xl bg-surface" />;
   }
 
   return <Survey model={model} />;

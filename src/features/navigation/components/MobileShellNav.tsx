@@ -87,25 +87,25 @@ export function MobileShellNav({
       {menuOpen ? (
         <button
           aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px] lg:hidden"
+          className="fixed inset-0 z-40 bg-ink/35 backdrop-blur-[1px] lg:hidden"
           onClick={() => setMenuOpen(false)}
           type="button"
         />
       ) : null}
 
       {menuOpen ? (
-        <section className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.8rem)] z-50 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_70px_-28px_rgba(15,23,42,0.5)] lg:hidden">
-          <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
+        <section className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.8rem)] z-50 overflow-hidden rounded-2xl border border-border bg-card shadow-[0_22px_70px_-28px_rgba(15,23,42,0.5)] lg:hidden">
+          <div className="border-b border-border bg-surface px-5 py-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-teal-500 text-base font-semibold text-white">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-garnet text-base font-semibold text-white">
                 {initials}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-slate-950">{userName}</p>
-                <p className="truncate text-xs text-slate-500">{userEmail}</p>
+                <p className="truncate text-base font-semibold text-text">{userName}</p>
+                <p className="truncate text-xs text-text-2">{userEmail}</p>
               </div>
             </div>
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-garnet">
               {roleLabel}
             </p>
           </div>
@@ -120,21 +120,27 @@ export function MobileShellNav({
               />
             ) : null}
             {isAdmin ? (
-              <MenuLink href={"/companies" as Route} label="Companies" onClick={() => setMenuOpen(false)} />
+              <MenuLink
+                href={"/companies" as Route}
+                label="Companies"
+                onClick={() => setMenuOpen(false)}
+              />
             ) : null}
             {isAdmin ? (
               <MenuLink href={"/users" as Route} label="Users" onClick={() => setMenuOpen(false)} />
             ) : null}
             <button
-              className="flex min-h-12 items-center justify-between rounded-2xl px-4 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="flex min-h-12 items-center justify-between rounded-xl px-4 text-left text-sm font-semibold text-text transition hover:bg-surface"
               type="button"
             >
               <span>Profile settings</span>
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Soon</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-2">
+                Soon
+              </span>
             </button>
             <form action={signOut}>
               <FormSubmitButton
-                className="mt-1 flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white"
+                className="mt-1 flex min-h-12 w-full items-center justify-center rounded-xl bg-ink px-4 text-sm font-semibold text-white"
                 loadingLabel="Signing out..."
                 type="submit"
               >
@@ -145,21 +151,30 @@ export function MobileShellNav({
         </section>
       ) : null}
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 gap-1 border-t border-slate-200 bg-white/98 px-3 pb-[calc(env(safe-area-inset-bottom)+0.7rem)] pt-2 shadow-[0_-18px_45px_-30px_rgba(15,23,42,0.45)] backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 gap-1 border-t border-border bg-card/98 px-3 pb-[calc(env(safe-area-inset-bottom)+0.7rem)] pt-2 shadow-[0_-18px_45px_-30px_rgba(15,23,42,0.45)] backdrop-blur lg:hidden">
         {primaryItems.map((item) => {
           const active = matchesPath(pathname, item.href);
 
           return (
             <LoadingLink
-              className="flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center"
+              className="flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-xl px-1 text-center"
               href={item.href}
               key={item.label}
               onClick={() => setMenuOpen(false)}
             >
-              <span className={["grid h-9 w-9 place-items-center", active ? "text-teal-600" : "text-slate-600"].join(" ")}>
+              <span
+                className={[
+                  "grid h-9 w-9 place-items-center",
+                  active ? "text-garnet" : "text-text-2"
+                ].join(" ")}
+              >
                 {item.icon}
               </span>
-              <span className={["text-[12px] font-semibold", active ? "text-slate-900" : "text-slate-600"].join(" ")}>
+              <span
+                className={["text-[12px] font-semibold", active ? "text-text" : "text-text-2"].join(
+                  " "
+                )}
+              >
                 {item.label}
               </span>
             </LoadingLink>
@@ -167,20 +182,24 @@ export function MobileShellNav({
         })}
 
         <button
-          className="relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center"
+          className="relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-xl px-1 text-center"
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
         >
           <span
             className={[
               "relative grid h-9 w-9 place-items-center rounded-full text-sm font-semibold text-white transition",
-              menuOpen ? "bg-slate-950" : "bg-red-500"
+              menuOpen ? "bg-ink" : "bg-garnet"
             ].join(" ")}
           >
             {initials}
-            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-teal-500" />
+            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-success" />
           </span>
-          <span className={["text-[12px] font-semibold", menuOpen ? "text-slate-900" : "text-slate-600"].join(" ")}>
+          <span
+            className={["text-[12px] font-semibold", menuOpen ? "text-text" : "text-text-2"].join(
+              " "
+            )}
+          >
             Menu
           </span>
         </button>
@@ -200,23 +219,15 @@ function getInitials(name: string, email: string) {
   return parts.map((part) => part[0]?.toUpperCase()).join("") || "PP";
 }
 
-function MenuLink({
-  href,
-  label,
-  onClick
-}: {
-  href: Route;
-  label: string;
-  onClick: () => void;
-}) {
+function MenuLink({ href, label, onClick }: { href: Route; label: string; onClick: () => void }) {
   return (
     <LoadingLink
-      className="flex min-h-12 items-center justify-between rounded-2xl px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+      className="flex min-h-12 items-center justify-between rounded-xl px-4 text-sm font-semibold text-text transition hover:bg-surface"
       href={href}
       onClick={onClick}
     >
       <span>{label}</span>
-      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="h-4 w-4 text-text-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
       </svg>
     </LoadingLink>
