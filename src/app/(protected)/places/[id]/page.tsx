@@ -38,10 +38,13 @@ export default async function PlaceVisitPage({
     redirect("/places");
   }
 
+  const voiceNotes = await service.getVoiceNotes(report);
+
   return (
     <RemoteVisitWorkspace
       assignedForms={assignedForms}
       report={report}
+      voiceNotes={voiceNotes}
       store={{
         id: store.id,
         name: store.name,

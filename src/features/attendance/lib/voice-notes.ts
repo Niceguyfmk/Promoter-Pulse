@@ -1,0 +1,2 @@
+export const MAX_VOICE_NOTE_SECONDS = 120;
+export const MAX_VOICE_NOTES_PER_REPORT = 5;

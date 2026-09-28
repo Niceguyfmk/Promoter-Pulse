@@ -7,7 +7,7 @@ import type { Route } from "next";
 import { AppError, isAppError } from "@/core/errors/app-error";
 import type { Json } from "@/shared/supabase/database.types";
 import type { GpsCheckInMetadata } from "../lib/gps-validation";
-import { createVisitReportService } from "./visit-report-service";
+import { createVisitReportService, type VisitReportVoiceNoteItem } from "./visit-report-service";
 
 function text(formData: FormData, key: string) {
   const value = (formData.get(key) as string | null)?.trim();
@@ -78,7 +78,13 @@ export async function startGpsCheckInAction(formData: FormData): Promise<GpsChec
   const accuracy = numeric(formData, "accuracy");
   const timestamp = String(formData.get("timestamp") ?? "");
 
-  if (!storeId || latitude == null || longitude == null || accuracy == null || Number.isNaN(Date.parse(timestamp))) {
+  if (
+    !storeId ||
+    latitude == null ||
+    longitude == null ||
+    accuracy == null ||
+    Number.isNaN(Date.parse(timestamp))
+  ) {
     return { error: "Invalid GPS check-in data. Please retry." };
   }
 
@@ -111,7 +117,9 @@ export async function saveVisitReportAction(formData: FormData) {
   const photoItems = [
     fileSummary(formData, "selfiePhoto", "Selfie in-store"),
     fileSummary(formData, "displayPhoto", "Complete display and fixture")
-  ].filter((item): item is { label: string; name: string; size: number; file: File } => Boolean(item));
+  ].filter((item): item is { label: string; name: string; size: number; file: File } =>
+    Boolean(item)
+  );
 
   let formAnswers: Record<string, Json>;
 
@@ -170,4 +178,51 @@ export async function uploadSurveyFileAction(formData: FormData) {
 
   const { createVisitReportService } = await import("./visit-report-service");
   return await createVisitReportService().uploadSurveyFile(reportId, storeId, file);
+}
+
+export type VoiceNoteActionResult =
+  | { error: null; note: VisitReportVoiceNoteItem }
+  | { error: string; note: null };
+
+export async function uploadVoiceNoteAction(formData: FormData): Promise<VoiceNoteActionResult> {
+  const reportId = text(formData, "reportId");
+  const storeId = text(formData, "storeId");
+  const durationSeconds = numeric(formData, "durationSeconds") ?? 1;
+  const file = formData.get("file");
+
+  if (!reportId || !storeId || !(file instanceof File)) {
+    return { error: "Invalid voice note upload", note: null };
+  }
+
+  try {
+    const note = await createVisitReportService().uploadVoiceNote({
+      reportId,
+      storeId,
+      file,
+      durationSeconds
+    });
+    return { error: null, note };
+  } catch (error) {
+    return {
+      error: isAppError(error) ? error.message : "Failed to upload voice note",
+      note: null
+    };
+  }
+}
+
+export async function deleteVoiceNoteAction(formData: FormData): Promise<{ error: string | null }> {
+  const reportId = text(formData, "reportId");
+  const storeId = text(formData, "storeId");
+  const noteId = text(formData, "noteId");
+
+  if (!reportId || !storeId || !noteId) {
+    return { error: "Invalid voice note" };
+  }
+
+  try {
+    await createVisitReportService().deleteVoiceNote(reportId, storeId, noteId);
+    return { error: null };
+  } catch (error) {
+    return { error: isAppError(error) ? error.message : "Failed to delete voice note" };
+  }
 }

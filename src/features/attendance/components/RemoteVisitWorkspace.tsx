@@ -2,12 +2,16 @@
 
 import { useCallback, useEffect, useState, useMemo } from "react";
 import type { Json } from "@/shared/supabase/database.types";
-import type { VisitReportRow } from "@/features/attendance/server/visit-report-service";
+import type {
+  VisitReportRow,
+  VisitReportVoiceNoteItem
+} from "@/features/attendance/server/visit-report-service";
 import { saveVisitReportAction } from "@/features/attendance/server/visit-report-actions";
 import {
   AssignedSurveyForm,
   type AssignedFormOption
 } from "@/features/forms/components/AssignedSurveyForm";
+import { VoiceNoteRecorder } from "@/features/attendance/components/VoiceNoteRecorder";
 import { ButtonLoader, LoadingLink } from "@/shared/loading";
 
 type Store = {
@@ -36,11 +40,13 @@ function formatDuration(seconds: number) {
 export function RemoteVisitWorkspace({
   assignedForms,
   report,
-  store
+  store,
+  voiceNotes
 }: {
   assignedForms: AssignedFormOption[];
   report: VisitReportRow;
   store: Store;
+  voiceNotes: VisitReportVoiceNoteItem[];
 }) {
   const visitFormId = "visit-report-form";
   const formAnswers = useMemo(() => asRecord(report.form_answers), [report.form_answers]);
@@ -53,6 +59,12 @@ export function RemoteVisitWorkspace({
   const [currentFormId, setCurrentFormId] = useState(initialFormId);
   const [currentFormName, setCurrentFormName] = useState(initialFormName);
   const [pendingIntent, setPendingIntent] = useState<"save" | "submit" | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const selectedForm = assignedForms.find((form) => form.id === currentFormId) ?? assignedForms[0];
+  const formSummary = useMemo(() => getFormSummary(selectedForm?.schema_json), [selectedForm]);
+  const answeredRequired = formSummary.requiredNames.filter((name) =>
+    hasAnswer(currentAnswers[name])
+  ).length;
 
   // Reset the pending indicator once a fresh `report` prop lands after a save
   // action revalidates (saveVisitReportAction doesn't redirect on plain saves).
@@ -122,7 +134,7 @@ export function RemoteVisitWorkspace({
             {report.checked_out_at ? "This visit has been checked out." : "You are now checked in."}
           </p>
           <p className="mt-2 text-sm font-bold text-text">
-            Add photos, fill a form, and document your work.
+            Record a voice note, fill your form, and document your work.
           </p>
           {report.status === "rejected" && report.review_note ? (
             <p className="mx-auto mt-4 max-w-2xl rounded-lg bg-danger-tint p-4 text-sm leading-6 text-danger">
@@ -150,19 +162,52 @@ export function RemoteVisitWorkspace({
       </form>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div className="p-5 sm:p-7">
-            <AssignedSurveyForm
-              forms={assignedForms}
-              formId={visitFormId}
-              initialAnswers={formAnswers}
-              initialFormId={report.form_id}
-              reportId={report.id}
-              storeId={store.id}
-              onChange={handleFormChange}
-            />
-          </div>
-        </section>
+        <div className="space-y-5">
+          <VoiceNoteRecorder initialNotes={voiceNotes} reportId={report.id} storeId={store.id} />
+
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+            {selectedForm ? (
+              <>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface text-text">
+                      <FormIcon />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-2">
+                        Assigned form
+                      </p>
+                      <h2 className="truncate text-lg font-bold text-text">{selectedForm.name}</h2>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-2">
+                    {Object.keys(currentAnswers).length > 0
+                      ? `Draft · ${answeredRequired} of ${formSummary.requiredNames.length} required`
+                      : "Not started"}
+                  </span>
+                </div>
+                <p className="mt-5 text-sm leading-6 text-text-2">
+                  {formSummary.total} fields · {formSummary.requiredNames.length} required
+                  {selectedForm.description ? ` · ${selectedForm.description}` : ""}
+                </p>
+                <button
+                  className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-ink text-sm font-bold text-white transition hover:bg-ink-2"
+                  onClick={() => setFormOpen(true)}
+                  type="button"
+                >
+                  {Object.keys(currentAnswers).length > 0 ? "Continue form" : "Open form"}
+                  <span aria-hidden="true" className="text-xl">
+                    ›
+                  </span>
+                </button>
+              </>
+            ) : (
+              <div className="rounded-xl bg-warning-tint p-4 text-sm leading-6 text-warning">
+                No form is assigned to this place yet.
+              </div>
+            )}
+          </section>
+        </div>
 
         <aside className="space-y-4">
           <VisitTimer
@@ -201,7 +246,125 @@ export function RemoteVisitWorkspace({
           </button>
         </aside>
       </div>
+
+      <div
+        aria-hidden={!formOpen}
+        className={[
+          "fixed inset-0 z-[70] bg-card transition",
+          formOpen ? "visible opacity-100" : "invisible pointer-events-none opacity-0"
+        ].join(" ")}
+      >
+        <div className="flex h-dvh flex-col">
+          <header className="flex h-[72px] shrink-0 items-center justify-between gap-4 bg-ink px-5 text-white sm:px-8">
+            <div className="flex min-w-0 items-center gap-4">
+              <button
+                aria-label="Close form"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-white/10"
+                onClick={() => setFormOpen(false)}
+                type="button"
+              >
+                <CloseIcon />
+              </button>
+              <h2 className="truncate text-xl font-bold">{currentFormName || "Assigned form"}</h2>
+            </div>
+            <span className="text-sm text-white/75">Visit form</span>
+          </header>
+          <div className="h-1 shrink-0 bg-border">
+            <div className="h-full w-1/2 bg-garnet" />
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto bg-card">
+            <div className="mx-auto max-w-3xl px-5 py-7 sm:px-8">
+              <AssignedSurveyForm
+                forms={assignedForms}
+                formId={visitFormId}
+                initialAnswers={formAnswers}
+                initialFormId={report.form_id}
+                reportId={report.id}
+                storeId={store.id}
+                onChange={handleFormChange}
+              />
+            </div>
+          </div>
+
+          <footer className="shrink-0 border-t border-border bg-card px-5 py-4 sm:px-8">
+            <div className="mx-auto flex max-w-3xl gap-3">
+              <button
+                className="h-12 flex-1 rounded-xl border border-border bg-card text-sm font-bold text-text transition hover:bg-surface"
+                onClick={() => setFormOpen(false)}
+                type="button"
+              >
+                Close
+              </button>
+              <button
+                className="h-12 flex-1 rounded-xl bg-garnet text-sm font-bold text-white transition hover:bg-garnet-dark disabled:opacity-60"
+                disabled={pendingIntent !== null}
+                form={visitFormId}
+                name="intent"
+                onClick={() => setFormOpen(false)}
+                type="submit"
+                value="save"
+              >
+                <ButtonLoader
+                  label="Save & close"
+                  loading={pendingIntent === "save"}
+                  loadingLabel="Saving..."
+                />
+              </button>
+            </div>
+          </footer>
+        </div>
+      </div>
     </main>
+  );
+}
+
+function getFormSummary(schema: Json | undefined) {
+  const fields: Array<{ name: string; required: boolean }> = [];
+
+  function visit(value: unknown) {
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (!value || typeof value !== "object") {
+      return;
+    }
+
+    const record = value as Record<string, unknown>;
+    if (typeof record.name === "string" && typeof record.type === "string") {
+      fields.push({ name: record.name, required: record.isRequired === true });
+    }
+    Object.values(record).forEach(visit);
+  }
+
+  visit(schema);
+  return {
+    requiredNames: fields.filter((field) => field.required).map((field) => field.name),
+    total: fields.length
+  };
+}
+
+function hasAnswer(value: Json | undefined) {
+  if (value == null || value === "") return false;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function FormIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <rect height="18" rx="2" strokeWidth="1.8" width="14" x="5" y="3" />
+      <path d="M9 8h6m-6 4h6m-6 4h4" strokeLinecap="round" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" strokeWidth="2" />
+    </svg>
   );
 }
 

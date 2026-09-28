@@ -264,6 +264,7 @@ export type Database = {
           form_name: string | null;
           form_answers: Json;
           photo_items: Json;
+          voice_note_items: Json;
           note: string | null;
           sales_numbers: Json;
           merchandising: Json;
@@ -292,6 +293,7 @@ export type Database = {
           form_name?: string | null;
           form_answers?: Json;
           photo_items?: Json;
+          voice_note_items?: Json;
           note?: string | null;
           sales_numbers?: Json;
           merchandising?: Json;

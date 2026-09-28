@@ -9,6 +9,7 @@ import {
   validateGpsCheckIn,
   type GpsCheckInMetadata
 } from "../lib/gps-validation";
+import { MAX_VOICE_NOTE_SECONDS, MAX_VOICE_NOTES_PER_REPORT } from "../lib/voice-notes";
 
 type StoreRow = Database["public"]["Tables"]["retail_stores"]["Row"];
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
@@ -54,7 +55,31 @@ const ALLOWED_PHOTO_TYPES = new Set([
   "image/heif"
 ]);
 
-let visitReportPhotoBucketReady: Promise<void> | null = null;
+export type VisitReportVoiceNoteItem = {
+  id: string;
+  name: string;
+  size: number;
+  bucket: string;
+  path: string;
+  contentType: string;
+  durationSeconds: number;
+  createdAt: string;
+  url?: string;
+};
+
+const VISIT_REPORT_VOICE_NOTE_BUCKET = "visit-report-voice-notes";
+const MAX_VOICE_NOTE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_VOICE_NOTE_TYPES = new Set([
+  "audio/webm",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/aac",
+  "audio/ogg",
+  "audio/mpeg",
+  "audio/wav"
+]);
+
+const bucketsReady = new Map<string, Promise<void>>();
 
 export type ReportStatusFilter = "all" | "under-review" | "accepted" | "rejected";
 function isMissingVisitReportsTable(error: unknown) {
@@ -85,6 +110,29 @@ function sanitizeFileName(name: string) {
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "") || "photo"
   );
+}
+
+function asVisitReportVoiceNoteItems(value: Json): VisitReportVoiceNoteItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is VisitReportVoiceNoteItem => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return false;
+    }
+
+    return (
+      typeof item.id === "string" &&
+      typeof item.name === "string" &&
+      typeof item.size === "number" &&
+      typeof item.bucket === "string" &&
+      typeof item.path === "string" &&
+      typeof item.contentType === "string" &&
+      typeof item.durationSeconds === "number" &&
+      typeof item.createdAt === "string"
+    );
+  });
 }
 
 function asVisitReportPhotoItems(value: Json): VisitReportPhotoItem[] {
@@ -118,32 +166,38 @@ function asVisitReportPhotoItems(value: Json): VisitReportPhotoItem[] {
 export class VisitReportService {
   constructor(private readonly authService = createAuthService()) {}
 
-  private async ensurePhotoBucket() {
-    if (!visitReportPhotoBucketReady) {
-      visitReportPhotoBucketReady = (async () => {
+  private async ensureBucket(name: string, maxSizeBytes: number, allowedMimeTypes: Set<string>) {
+    let ready = bucketsReady.get(name);
+    if (!ready) {
+      ready = (async () => {
         const admin = createSupabaseAdminClient();
-        const { data: bucket } = await admin.storage.getBucket(VISIT_REPORT_PHOTO_BUCKET);
+        const { data: bucket } = await admin.storage.getBucket(name);
 
         if (bucket) {
           return;
         }
 
-        const { error } = await admin.storage.createBucket(VISIT_REPORT_PHOTO_BUCKET, {
+        const { error } = await admin.storage.createBucket(name, {
           public: false,
-          fileSizeLimit: `${MAX_PHOTO_SIZE_BYTES}`,
-          allowedMimeTypes: Array.from(ALLOWED_PHOTO_TYPES)
+          fileSizeLimit: `${maxSizeBytes}`,
+          allowedMimeTypes: Array.from(allowedMimeTypes)
         });
 
         if (error && !error.message.toLowerCase().includes("already exists")) {
-          throw new AppError("INTERNAL_ERROR", "Failed to provision photo storage", error);
+          throw new AppError("INTERNAL_ERROR", `Failed to provision ${name} storage`, error);
         }
       })().catch((error) => {
-        visitReportPhotoBucketReady = null;
+        bucketsReady.delete(name);
         throw error;
       });
+      bucketsReady.set(name, ready);
     }
 
-    await visitReportPhotoBucketReady;
+    await ready;
+  }
+
+  private ensurePhotoBucket() {
+    return this.ensureBucket(VISIT_REPORT_PHOTO_BUCKET, MAX_PHOTO_SIZE_BYTES, ALLOWED_PHOTO_TYPES);
   }
 
   private async uploadVisitReportPhotos(args: {
@@ -246,7 +300,9 @@ export class VisitReportService {
     };
   }
 
-  private async withSignedPhotoUrls(items: VisitReportPhotoItem[]) {
+  private async withSignedPhotoUrls<T extends { bucket: string; path: string; url?: string }>(
+    items: T[]
+  ) {
     if (items.length === 0) {
       return items;
     }
@@ -269,6 +325,157 @@ export class VisitReportService {
         };
       })
     );
+  }
+
+  async uploadVoiceNote(args: {
+    reportId: string;
+    storeId: string;
+    file: File;
+    durationSeconds: number;
+  }) {
+    const session = await this.authService.requireSession();
+    const report = await this.getEditableReport(args.reportId);
+
+    if (!report || report.store_id !== args.storeId) {
+      throw new AppError("INVALID_STATE", "This report can no longer be edited");
+    }
+
+    const existing = asVisitReportVoiceNoteItems(report.voice_note_items);
+    if (existing.length >= MAX_VOICE_NOTES_PER_REPORT) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        `A report can have at most ${MAX_VOICE_NOTES_PER_REPORT} voice notes`
+      );
+    }
+
+    if (args.file.size === 0) {
+      throw new AppError("VALIDATION_ERROR", "Voice note is empty");
+    }
+
+    if (args.file.size > MAX_VOICE_NOTE_SIZE_BYTES) {
+      throw new AppError("VALIDATION_ERROR", "Voice note exceeds the 5 MB upload limit");
+    }
+
+    // MediaRecorder reports e.g. "audio/webm;codecs=opus"; storage matches on the base type.
+    const contentType = (args.file.type.split(";")[0] ?? "").trim().toLowerCase();
+    if (!ALLOWED_VOICE_NOTE_TYPES.has(contentType)) {
+      throw new AppError("VALIDATION_ERROR", "Voice note format is not supported");
+    }
+
+    await this.ensureBucket(
+      VISIT_REPORT_VOICE_NOTE_BUCKET,
+      MAX_VOICE_NOTE_SIZE_BYTES,
+      ALLOWED_VOICE_NOTE_TYPES
+    );
+    const admin = createSupabaseAdminClient();
+    const id = crypto.randomUUID();
+    const storagePath = [
+      session.user.tenantId,
+      args.storeId,
+      args.reportId,
+      `${id}-${sanitizeFileName(args.file.name)}`
+    ].join("/");
+
+    const { error: uploadError } = await admin.storage
+      .from(VISIT_REPORT_VOICE_NOTE_BUCKET)
+      .upload(storagePath, args.file, { contentType, upsert: false });
+
+    if (uploadError) {
+      throw new AppError("INTERNAL_ERROR", "Failed to upload voice note", uploadError);
+    }
+
+    const item: VisitReportVoiceNoteItem = {
+      id,
+      name: args.file.name,
+      size: args.file.size,
+      bucket: VISIT_REPORT_VOICE_NOTE_BUCKET,
+      path: storagePath,
+      contentType,
+      durationSeconds: Math.min(
+        Math.max(Math.round(args.durationSeconds) || 1, 1),
+        MAX_VOICE_NOTE_SECONDS
+      ),
+      createdAt: new Date().toISOString()
+    };
+
+    const { data, error } = await admin
+      .from("visit_reports")
+      .update({
+        voice_note_items: [...existing, item] as Json,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", args.reportId)
+      .eq("store_id", args.storeId)
+      .eq("promoter_user_id", session.user.id)
+      .eq("tenant_id", session.user.tenantId)
+      .in("status", ["draft", "rejected"])
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) {
+      await admin.storage.from(VISIT_REPORT_VOICE_NOTE_BUCKET).remove([storagePath]);
+      if (error) {
+        console.error("[VisitReportService] Failed to save voice note:", error);
+        throw new AppError("INTERNAL_ERROR", "Failed to save voice note", error);
+      }
+      throw new AppError("INVALID_STATE", "This report can no longer be edited");
+    }
+
+    const [signed] = await this.withSignedPhotoUrls([item]);
+    return signed ?? item;
+  }
+
+  async deleteVoiceNote(reportId: string, storeId: string, noteId: string) {
+    const session = await this.authService.requireSession();
+    const report = await this.getEditableReport(reportId);
+
+    if (!report || report.store_id !== storeId) {
+      throw new AppError("INVALID_STATE", "This report can no longer be edited");
+    }
+
+    const existing = asVisitReportVoiceNoteItems(report.voice_note_items);
+    const target = existing.find((item) => item.id === noteId);
+    if (!target) {
+      return;
+    }
+
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from("visit_reports")
+      .update({
+        voice_note_items: existing.filter((item) => item.id !== noteId) as Json,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", reportId)
+      .eq("store_id", storeId)
+      .eq("promoter_user_id", session.user.id)
+      .eq("tenant_id", session.user.tenantId)
+      .in("status", ["draft", "rejected"])
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("[VisitReportService] Failed to delete voice note:", error);
+      throw new AppError("INTERNAL_ERROR", "Failed to delete voice note", error);
+    }
+
+    if (!data) {
+      throw new AppError("INVALID_STATE", "This report can no longer be edited");
+    }
+
+    const { error: removeError } = await admin.storage.from(target.bucket).remove([target.path]);
+    if (removeError) {
+      console.error("[VisitReportService] Failed to remove voice note file:", removeError);
+    }
+  }
+
+  async getVoiceNotes(report: VisitReportRow) {
+    const session = await this.authService.requireSession();
+    if (report.promoter_user_id !== session.user.id || report.tenant_id !== session.user.tenantId) {
+      throw new AppError("FORBIDDEN", "You cannot view these voice notes");
+    }
+
+    return this.withSignedPhotoUrls(asVisitReportVoiceNoteItems(report.voice_note_items));
   }
 
   async getPlace(storeId: string) {
