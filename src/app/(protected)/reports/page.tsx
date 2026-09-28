@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import {
   createVisitReportService,
+  type VisitReportVoiceNoteItem,
   type VisitReportWithRelations
 } from "@/features/attendance/server/visit-report-service";
 import {
@@ -872,7 +873,11 @@ function ReportsTableSkeleton({
   );
 }
 
-function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
+function ManagerReportDetail({
+  report
+}: {
+  report: VisitReportWithRelations & { voiceNotes: VisitReportVoiceNoteItem[] };
+}) {
   const { assets: surveyAssets, nonAssetEntries: answerEntries } = extractSurveyUploadedAssets(
     reportAnswerEntries(report)
   );
@@ -928,6 +933,8 @@ function ManagerReportDetail({ report }: { report: VisitReportWithRelations }) {
               Hours logged {formatLoggedHours(report.started_at, report.checked_out_at)}
             </p>
           </div>
+
+          {report.voiceNotes.length > 0 ? <VoiceNotesSection notes={report.voiceNotes} /> : null}
 
           <section className="space-y-3">
             {answerEntries.length > 0 ? (
@@ -1564,6 +1571,40 @@ function SummaryItem({ label, value }: { label: string; value: string | undefine
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-2">{label}</p>
       <p className="mt-2 text-sm font-semibold text-text">{value || "Not provided"}</p>
     </div>
+  );
+}
+
+function formatClipDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function VoiceNotesSection({ notes }: { notes: VisitReportVoiceNoteItem[] }) {
+  return (
+    <section className="rounded-xl border border-border p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-2">
+        Voice notes ({notes.length})
+      </p>
+      <ul className="mt-3 space-y-3">
+        {notes.map((note, index) => (
+          <li className="rounded-xl bg-surface/80 p-3" key={note.id}>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-bold text-text">Note {index + 1}</span>
+              <span className="text-text-2">
+                {formatClipDuration(note.durationSeconds)} · {formatDate(note.createdAt)}
+              </span>
+            </div>
+            {note.url ? (
+              <audio className="mt-2 w-full" controls preload="none" src={note.url}>
+                <track kind="captions" />
+              </audio>
+            ) : (
+              <p className="mt-2 text-sm text-danger">This recording could not be loaded.</p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

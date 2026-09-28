@@ -834,11 +834,13 @@ export class VisitReportService {
     }
 
     const report = data as unknown as VisitReportWithRelations;
-    report.photo_items = (await this.withSignedPhotoUrls(
-      asVisitReportPhotoItems(report.photo_items)
-    )) as Json;
+    const [photoItems, voiceNotes] = await Promise.all([
+      this.withSignedPhotoUrls(asVisitReportPhotoItems(report.photo_items)),
+      this.withSignedPhotoUrls(asVisitReportVoiceNoteItems(report.voice_note_items))
+    ]);
+    report.photo_items = photoItems as Json;
 
-    return report;
+    return { ...report, voiceNotes };
   }
 
   async listReportsForReview(filters?: {
