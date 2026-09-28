@@ -306,41 +306,47 @@ export function VoiceNoteRecorder({
       ) : notes.length > 0 ? (
         <div className="mt-5 space-y-3">
           {notes.map((note, index) => (
-            <div
-              className="flex items-center gap-3 rounded-xl border border-border p-3"
-              key={note.id}
-            >
-              <audio className="h-10 min-w-0 flex-1" controls preload="metadata" src={note.url}>
+            <div className="min-w-0 rounded-xl border border-border p-3" key={note.id}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm">
+                  <span className="font-bold text-text">Note {index + 1}</span>
+                  <span className="text-xs text-text-2">
+                    {formatDuration(note.durationSeconds)}
+                  </span>
+                  {note.status === "uploading" ? (
+                    <span className="text-xs text-text-2">· Uploading...</span>
+                  ) : note.status === "deleting" ? (
+                    <span className="text-xs text-text-2">· Deleting...</span>
+                  ) : note.status === "failed" && note.file ? (
+                    <button
+                      className="text-xs font-bold text-danger underline"
+                      onClick={() => uploadNote(note.id, note.file!, note.durationSeconds)}
+                      type="button"
+                    >
+                      Retry upload
+                    </button>
+                  ) : (
+                    <span className="text-xs text-text-2">· Saved</span>
+                  )}
+                </div>
+                <button
+                  aria-label={`Delete note ${index + 1}`}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-2 transition hover:bg-danger-tint hover:text-danger disabled:opacity-40"
+                  disabled={note.status === "uploading" || note.status === "deleting"}
+                  onClick={() => removeNote(note)}
+                  type="button"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
+              <audio
+                className="mt-2 block h-10 w-full min-w-0"
+                controls
+                preload="metadata"
+                src={note.url}
+              >
                 <track kind="captions" />
               </audio>
-              <div className="shrink-0 text-right">
-                <p className="text-sm font-bold text-text">Note {index + 1}</p>
-                <p className="text-xs text-text-2">{formatDuration(note.durationSeconds)}</p>
-                {note.status === "uploading" ? (
-                  <p className="text-xs text-text-2">Uploading...</p>
-                ) : note.status === "deleting" ? (
-                  <p className="text-xs text-text-2">Deleting...</p>
-                ) : note.status === "failed" && note.file ? (
-                  <button
-                    className="text-xs font-bold text-danger underline"
-                    onClick={() => uploadNote(note.id, note.file!, note.durationSeconds)}
-                    type="button"
-                  >
-                    Retry upload
-                  </button>
-                ) : (
-                  <p className="text-xs text-text-2">Saved</p>
-                )}
-              </div>
-              <button
-                aria-label={`Delete note ${index + 1}`}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-2 transition hover:bg-danger-tint hover:text-danger disabled:opacity-40"
-                disabled={note.status === "uploading" || note.status === "deleting"}
-                onClick={() => removeNote(note)}
-                type="button"
-              >
-                <TrashIcon />
-              </button>
             </div>
           ))}
           {canRecordMore ? (

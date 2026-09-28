@@ -161,8 +161,8 @@ export function RemoteVisitWorkspace({
         <input name="formName" type="hidden" value={currentFormName} />
       </form>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-5">
           <VoiceNoteRecorder initialNotes={voiceNotes} reportId={report.id} storeId={store.id} />
 
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
