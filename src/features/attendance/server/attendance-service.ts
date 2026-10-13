@@ -5,6 +5,7 @@ import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/shared/supabase/server";
 import type { Database } from "@/shared/supabase/database.types";
 import type { CheckInRequest, CheckOutRequest } from "../schemas/attendance-schemas";
+import { closeStaleVisitReports } from "./close-stale-visits";
 
 type ShiftRow = Database["public"]["Tables"]["shifts"]["Row"];
 type RetailStoreRow = Database["public"]["Tables"]["retail_stores"]["Row"];
@@ -43,12 +44,16 @@ export type CoverageStore = Pick<
 export class AttendanceService {
   constructor(private readonly authService = createAuthService()) {}
 
-  async getTodayActivitySummary(period: ActivitySummaryPeriod = "day"): Promise<TodayActivitySummary> {
+  async getTodayActivitySummary(
+    period: ActivitySummaryPeriod = "day"
+  ): Promise<TodayActivitySummary> {
     const session = await this.authService.requireSession();
     const isAdmin = session.roles.includes("admin");
     const isManager = session.roles.includes("manager");
-    const supabase = isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
+    const supabase =
+      isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
     const { start, end } = getActivityRange(period);
+    await closeStaleVisitReports();
 
     let visitsQuery = supabase
       .from("shifts")
@@ -113,7 +118,8 @@ export class AttendanceService {
       completedReportsQuery
     ]);
 
-    const error = visitsError || activeError || completedError || activeReportsError || completedReportsError;
+    const error =
+      visitsError || activeError || completedError || activeReportsError || completedReportsError;
     if (error) {
       console.error("[AttendanceService] Failed to fetch today activity summary:", error);
       throw new AppError("INTERNAL_ERROR", "Failed to fetch today activity summary", error);
@@ -135,23 +141,24 @@ export class AttendanceService {
     const session = await this.authService.requireSession();
     const isAdmin = session.roles.includes("admin");
     const isManager = session.roles.includes("manager");
-    const supabase = isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
+    const supabase =
+      isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
 
     let query = supabase
       .from("shifts")
-      .select(`
+      .select(
+        `
         *,
         retail_stores(*)
-      `)
+      `
+      )
       .order("scheduled_start_at", { ascending: true })
       .limit(5);
 
     if (isManager) {
       query = query.eq("tenant_id", session.user.tenantId);
     } else if (!isAdmin) {
-      query = query
-        .eq("tenant_id", session.user.tenantId)
-        .eq("promoter_user_id", session.user.id);
+      query = query.eq("tenant_id", session.user.tenantId).eq("promoter_user_id", session.user.id);
     }
 
     const { data, error } = await query;
@@ -170,13 +177,15 @@ export class AttendanceService {
 
     const { data, error } = await supabase
       .from("shifts")
-      .select(`
+      .select(
+        `
         id,
         store_id,
         checked_in_at,
         scheduled_start_at,
         retail_stores(name, address)
-      `)
+      `
+      )
       .eq("tenant_id", session.user.tenantId)
       .eq("promoter_user_id", session.user.id)
       .eq("status", "checked_in")
@@ -195,16 +204,19 @@ export class AttendanceService {
 
   async getActiveWorkflowVisit(): Promise<ActiveWorkflowVisit | null> {
     const session = await this.authService.requireSession();
+    await closeStaleVisitReports();
     const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase
       .from("visit_reports")
-      .select(`
+      .select(
+        `
         id,
         store_id,
         started_at,
         retail_stores!visit_reports_store_id_fkey(name, address)
-      `)
+      `
+      )
       .eq("tenant_id", session.user.tenantId)
       .eq("promoter_user_id", session.user.id)
       .eq("status", "draft")
@@ -249,23 +261,30 @@ export class AttendanceService {
       await Promise.all([
         supabase
           .from("shifts")
-          .select(`
+          .select(
+            `
             store_id,
             retail_stores(*)
-          `)
+          `
+          )
           .eq("promoter_user_id", session.user.id)
           .eq("tenant_id", session.user.tenantId),
         supabase
           .from("place_promoter_assignments")
-          .select(`
+          .select(
+            `
             store_id,
             retail_stores(*)
-          `)
+          `
+          )
           .eq("user_id", session.user.id)
       ]);
 
     if (shiftsError || assignmentsError) {
-      console.error("[AttendanceService] Assigned store fetch failed:", shiftsError || assignmentsError);
+      console.error(
+        "[AttendanceService] Assigned store fetch failed:",
+        shiftsError || assignmentsError
+      );
       return [];
     }
 
@@ -288,7 +307,9 @@ export class AttendanceService {
     const session = await this.authService.requireSession();
     const isAdmin = session.roles.includes("admin");
     const isManager = session.roles.includes("manager");
-    const supabase = isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
+    const supabase =
+      isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
+    await closeStaleVisitReports();
 
     let storesQuery = supabase
       .from("retail_stores")
@@ -338,10 +359,9 @@ export class AttendanceService {
       ...(activeReports?.map((report) => report.store_id) ?? [])
     ]);
 
-    return ((stores ?? []) as Pick<
-      RetailStoreRow,
-      "id" | "name" | "address" | "latitude" | "longitude"
-    >[]).map((store) => ({
+    return (
+      (stores ?? []) as Pick<RetailStoreRow, "id" | "name" | "address" | "latitude" | "longitude">[]
+    ).map((store) => ({
       ...store,
       isLive: liveStoreIds.has(store.id)
     }));

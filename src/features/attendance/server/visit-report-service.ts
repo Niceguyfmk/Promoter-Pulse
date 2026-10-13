@@ -10,6 +10,7 @@ import {
   type GpsCheckInMetadata
 } from "../lib/gps-validation";
 import { MAX_VOICE_NOTE_SECONDS, MAX_VOICE_NOTES_PER_REPORT } from "../lib/voice-notes";
+import { closeStaleVisitReports } from "./close-stale-visits";
 
 type StoreRow = Database["public"]["Tables"]["retail_stores"]["Row"];
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
@@ -497,6 +498,7 @@ export class VisitReportService {
 
   async getActiveReportForPlace(storeId: string) {
     const session = await this.authService.requireSession();
+    await closeStaleVisitReports();
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("visit_reports")
@@ -518,6 +520,7 @@ export class VisitReportService {
 
   async getEditableReport(reportId: string) {
     const session = await this.authService.requireSession();
+    await closeStaleVisitReports();
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("visit_reports")

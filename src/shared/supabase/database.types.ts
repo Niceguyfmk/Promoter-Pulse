@@ -314,6 +314,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: string | null;
       };
+      close_stale_visit_reports: {
+        Args: { p_time_zone: string };
+        Returns: number;
+      };
     };
     Enums: {
       auth_provider: "supabase" | "okta" | "auth0" | "azure_ad";

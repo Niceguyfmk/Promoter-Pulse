@@ -8,7 +8,8 @@ const clientEnvSchema = z.object({
 
 const serverEnvSchema = clientEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  SENTRY_DSN: z.url().optional().or(z.literal(""))
+  SENTRY_DSN: z.url().optional().or(z.literal("")),
+  APP_TIME_ZONE: z.string().min(1).default("Asia/Dubai")
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
@@ -28,6 +29,7 @@ export function getServerEnv(): ServerEnv {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    SENTRY_DSN: process.env.SENTRY_DSN
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    APP_TIME_ZONE: process.env.APP_TIME_ZONE || undefined
   });
 }
