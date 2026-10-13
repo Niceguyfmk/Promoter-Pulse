@@ -213,31 +213,7 @@ export function UsersTable({
                 </FormSubmitButton>
               </form>
               <div className="flex flex-wrap items-center gap-2">
-                <form
-                  action={saveUserFromUsersPage}
-                  className="flex items-center gap-2"
-                  id={`user-form-${user.id}`}
-                >
-                  <input name="userId" type="hidden" value={user.id} />
-                  <select
-                    className="min-h-11 rounded-2xl border border-border bg-card px-3 text-sm font-medium text-text outline-none transition focus:border-garnet"
-                    defaultValue={user.role}
-                    name="role"
-                  >
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>
-                        {role}
-                      </option>
-                    ))}
-                  </select>
-                  <FormSubmitButton
-                    className="min-h-11 rounded-2xl bg-surface px-4 text-sm font-semibold text-text transition hover:bg-garnet-tint hover:text-garnet"
-                    loadingLabel="Saving..."
-                    type="submit"
-                  >
-                    Save
-                  </FormSubmitButton>
-                </form>
+                <SaveUserForm role={user.role} userId={user.id} />
                 {user.id !== currentUserId ? (
                   <form action={deleteUserFromUsersPage}>
                     <input name="userId" type="hidden" value={user.id} />
@@ -258,6 +234,48 @@ export function UsersTable({
         )}
       </div>
     </section>
+  );
+}
+
+function SaveUserForm({ role, userId }: { role: Role; userId: string }) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <>
+      <form
+        action={async (formData) => {
+          const result = await saveUserFromUsersPage(formData);
+          setError(result.error ?? null);
+        }}
+        className="flex items-center gap-2"
+        id={`user-form-${userId}`}
+      >
+        <input name="userId" type="hidden" value={userId} />
+        <select
+          className="min-h-11 rounded-2xl border border-border bg-card px-3 text-sm font-medium text-text outline-none transition focus:border-garnet"
+          defaultValue={role}
+          name="role"
+        >
+          {roleOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <FormSubmitButton
+          className="min-h-11 rounded-2xl bg-surface px-4 text-sm font-semibold text-text transition hover:bg-garnet-tint hover:text-garnet"
+          loadingLabel="Saving..."
+          type="submit"
+        >
+          Save
+        </FormSubmitButton>
+      </form>
+      {error ? (
+        <p className="basis-full text-sm text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </>
   );
 }
 
