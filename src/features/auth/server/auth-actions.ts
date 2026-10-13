@@ -32,8 +32,7 @@ export async function signIn(formData: FormData) {
 
 export async function signUp() {
   return {
-    error:
-      "Direct signup is disabled. Ask a platform admin to invite you to your company tenant."
+    error: "Direct signup is disabled. Ask a platform admin to invite you to your company tenant."
   };
 }
 
@@ -161,6 +160,99 @@ export async function updateUserRole(formData: FormData) {
   }
 }
 
+export async function updateUserCompany(formData: FormData) {
+  try {
+    await requirePlatformAdmin();
+    const admin = createSupabaseAdminClient();
+
+    const userId = formData.get("userId") as string;
+    const companyId = formData.get("companyId") as string;
+
+    if (!userId || !companyId) {
+      return { error: "User id and company id are required." };
+    }
+
+    const [{ data: user, error: userError }, { data: company, error: companyError }] =
+      await Promise.all([
+        admin
+          .from("users")
+          .select("id, tenant_id")
+          .eq("id", userId)
+          .is("deleted_at", null)
+          .single(),
+        admin
+          .from("tenants")
+          .select("id, is_active")
+          .eq("id", companyId)
+          .is("deleted_at", null)
+          .single()
+      ]);
+
+    if (userError || !user) {
+      return { error: "User not found." };
+    }
+
+    if (companyError || !company || !company.is_active) {
+      return { error: "Company not found or inactive." };
+    }
+
+    if (user.tenant_id === company.id) {
+      return { success: true };
+    }
+
+    const { count: openVisits, error: openVisitsError } = await admin
+      .from("visit_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("promoter_user_id", user.id)
+      .eq("status", "draft")
+      .is("deleted_at", null);
+
+    if (openVisitsError) {
+      return { error: "Failed to check the user's open visits." };
+    }
+
+    if (openVisits) {
+      return { error: "This user has an open visit. Ask them to finish it before moving company." };
+    }
+
+    // Role assignments are keyed by tenant, so they must move together with the user.
+    const { error: roleError } = await admin
+      .from("user_role_assignments")
+      .update({ tenant_id: company.id })
+      .eq("user_id", user.id)
+      .eq("tenant_id", user.tenant_id);
+
+    if (roleError) {
+      return { error: "Failed to move user roles." };
+    }
+
+    const { error: updateError } = await admin
+      .from("users")
+      .update({ tenant_id: company.id })
+      .eq("id", user.id);
+
+    if (updateError) {
+      await admin
+        .from("user_role_assignments")
+        .update({ tenant_id: user.tenant_id })
+        .eq("user_id", user.id)
+        .eq("tenant_id", company.id);
+      return { error: "Failed to update user company." };
+    }
+
+    // Place assignments point at the old company's places and no longer apply.
+    await Promise.all([
+      admin.from("place_promoter_assignments").delete().eq("user_id", user.id),
+      admin.from("place_representative_assignments").delete().eq("user_id", user.id)
+    ]);
+
+    revalidatePath("/users");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Company update failed" };
+  }
+}
+
 export async function updateUserActiveStatus(formData: FormData) {
   try {
     const session = await requirePlatformAdmin();
@@ -235,11 +327,15 @@ export async function deleteUser(formData: FormData) {
     const { error: deleteError } = await admin.from("users").delete().eq("id", user.id);
 
     if (deleteError) {
-      return { error: "Failed to delete user. This user may still be referenced by operational records." };
+      return {
+        error: "Failed to delete user. This user may still be referenced by operational records."
+      };
     }
 
     if (user.auth_provider === "supabase") {
-      const { error: authDeleteError } = await admin.auth.admin.deleteUser(user.auth_provider_user_id);
+      const { error: authDeleteError } = await admin.auth.admin.deleteUser(
+        user.auth_provider_user_id
+      );
 
       if (authDeleteError) {
         return { error: authDeleteError.message };

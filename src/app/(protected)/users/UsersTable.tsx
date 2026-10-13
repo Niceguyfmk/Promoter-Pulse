@@ -6,6 +6,7 @@ import type { Role } from "@/core/auth/roles";
 import {
   deleteUserFromUsersPage,
   updateUserActiveStatusFromUsersPage,
+  updateUserCompanyFromUsersPage,
   updateUserRoleFromUsersPage
 } from "./users-page-actions";
 import { FormSubmitButton } from "@/shared/loading";
@@ -14,6 +15,7 @@ export type UsersTableRow = {
   id: string;
   email: string;
   fullName: string | null;
+  companyId: string;
   company: string;
   companyIsActive: boolean;
   isActive: boolean;
@@ -26,9 +28,11 @@ type SortDirection = "asc" | "desc";
 const roleOptions: Role[] = ["admin", "manager", "promoter"];
 
 export function UsersTable({
+  companyOptions,
   currentUserId,
   users
 }: {
+  companyOptions: { id: string; name: string }[];
   currentUserId: string;
   users: UsersTableRow[];
 }) {
@@ -168,6 +172,34 @@ export function UsersTable({
                 <p className="text-xs uppercase tracking-[0.16em] text-text-2">
                   Company {user.companyIsActive ? "active" : "inactive"}
                 </p>
+                <form
+                  action={updateUserCompanyFromUsersPage}
+                  className="mt-2 flex items-center gap-2"
+                >
+                  <input name="userId" type="hidden" value={user.id} />
+                  <select
+                    aria-label={`Company for ${user.email}`}
+                    className="min-h-9 min-w-0 flex-1 rounded-xl border border-border bg-card px-2 text-xs font-medium text-text outline-none transition focus:border-garnet"
+                    defaultValue={user.companyId}
+                    name="companyId"
+                  >
+                    {companyOptions.some((option) => option.id === user.companyId) ? null : (
+                      <option value={user.companyId}>{user.company}</option>
+                    )}
+                    {companyOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                  <FormSubmitButton
+                    className="min-h-9 rounded-xl bg-surface px-3 text-xs font-semibold text-text transition hover:bg-garnet-tint hover:text-garnet"
+                    loadingLabel="Moving..."
+                    type="submit"
+                  >
+                    Move
+                  </FormSubmitButton>
+                </form>
               </div>
               <form action={updateUserActiveStatusFromUsersPage}>
                 <input name="userId" type="hidden" value={user.id} />

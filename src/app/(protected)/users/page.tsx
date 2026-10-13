@@ -130,13 +130,21 @@ async function UsersSection({ currentUserId }: { currentUserId: string }) {
     id: user.id,
     email: user.email,
     fullName: user.full_name,
+    companyId: user.tenant_id,
     company: tenantById.get(user.tenant_id)?.name || "Unknown tenant",
     companyIsActive: tenantById.get(user.tenant_id)?.is_active ?? true,
     isActive: user.is_active,
     role: roleByUserId.get(user.id) || "promoter"
   }));
 
-  return <UsersTable currentUserId={currentUserId} users={tableUsers} />;
+  const companyOptions = ((tenants as TenantRow[] | null) || [])
+    .filter((tenant) => tenant.is_active !== false)
+    .map((tenant) => ({ id: tenant.id, name: tenant.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <UsersTable companyOptions={companyOptions} currentUserId={currentUserId} users={tableUsers} />
+  );
 }
 
 function UsersTableSkeleton() {

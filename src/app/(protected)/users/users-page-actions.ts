@@ -3,8 +3,13 @@
 import {
   deleteUser,
   updateUserActiveStatus,
+  updateUserCompany,
   updateUserRole
 } from "@/features/auth/server/auth-actions";
+
+export async function updateUserCompanyFromUsersPage(formData: FormData) {
+  await updateUserCompany(formData);
+}
 
 export async function updateUserRoleFromUsersPage(formData: FormData) {
   await updateUserRole(formData);
