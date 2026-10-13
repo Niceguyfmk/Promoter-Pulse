@@ -762,7 +762,7 @@ export class VisitReportService {
       ...(payload.submit
         ? {
             status: "submitted" as const,
-            checked_out_at: new Date().toISOString(),
+            checked_out_at: existingReport.checked_out_at ?? new Date().toISOString(),
             reviewed_by_user_id: null,
             reviewed_at: null,
             review_note: null
