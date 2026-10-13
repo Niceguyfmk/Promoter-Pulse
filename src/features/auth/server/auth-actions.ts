@@ -160,6 +160,35 @@ export async function updateUserRole(formData: FormData) {
   }
 }
 
+export async function updateUserName(formData: FormData) {
+  try {
+    await requirePlatformAdmin();
+    const admin = createSupabaseAdminClient();
+
+    const userId = formData.get("userId") as string;
+    const fullName = (formData.get("fullName") as string)?.trim();
+
+    if (!userId || !fullName) {
+      return { error: "User id and name are required." };
+    }
+
+    const { error } = await admin
+      .from("users")
+      .update({ full_name: fullName })
+      .eq("id", userId)
+      .is("deleted_at", null);
+
+    if (error) {
+      return { error: "Failed to update user name." };
+    }
+
+    revalidatePath("/users");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Name update failed" };
+  }
+}
+
 export async function updateUserCompany(formData: FormData) {
   try {
     await requirePlatformAdmin();

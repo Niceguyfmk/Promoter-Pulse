@@ -4,15 +4,20 @@ import {
   deleteUser,
   updateUserActiveStatus,
   updateUserCompany,
+  updateUserName,
   updateUserRole
 } from "@/features/auth/server/auth-actions";
 
-export async function updateUserCompanyFromUsersPage(formData: FormData) {
-  await updateUserCompany(formData);
-}
+// Applies every editable field in the row. Company goes before role because the
+// role update reads the user's current company from the database.
+export async function saveUserFromUsersPage(formData: FormData) {
+  for (const update of [updateUserName, updateUserCompany, updateUserRole]) {
+    const result = await update(formData);
 
-export async function updateUserRoleFromUsersPage(formData: FormData) {
-  await updateUserRole(formData);
+    if (result && "error" in result) {
+      return;
+    }
+  }
 }
 
 export async function updateUserActiveStatusFromUsersPage(formData: FormData) {
