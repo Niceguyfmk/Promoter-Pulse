@@ -42,6 +42,30 @@ export async function signOut() {
   redirect("/login");
 }
 
+export async function requestPasswordReset(formData: FormData) {
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+
+  if (!email) {
+    return { error: "Email is required." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=/set-password`
+  });
+
+  if (error?.code === "over_email_send_rate_limit") {
+    return { error: "Too many reset requests. Please try again in a little while." };
+  }
+
+  if (error) {
+    console.error("[requestPasswordReset] Failed to send reset email:", error);
+  }
+
+  // Same response whether or not the account exists, so emails can't be probed.
+  return { success: true };
+}
+
 async function requirePlatformAdmin() {
   const session = await createAuthService().requireSession();
   if (!session.roles.includes("admin")) {
