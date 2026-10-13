@@ -195,37 +195,14 @@ export function UsersTable({
                   ))}
                 </select>
               </div>
-              <form action={updateUserActiveStatusFromUsersPage}>
-                <input name="userId" type="hidden" value={user.id} />
-                <input name="isActive" type="hidden" value={String(!user.isActive)} />
-                <FormSubmitButton
-                  className={[
-                    "min-h-10 rounded-2xl px-4 text-xs font-semibold uppercase tracking-[0.16em] transition",
-                    user.isActive
-                      ? "bg-success-tint text-success hover:bg-success/15"
-                      : "bg-surface text-text-2 hover:bg-border"
-                  ].join(" ")}
-                  disabled={user.id === currentUserId}
-                  loadingLabel="Updating..."
-                  type="submit"
-                >
-                  {user.isActive ? "Active" : "Inactive"}
-                </FormSubmitButton>
-              </form>
+              <ActiveStatusForm
+                disabled={user.id === currentUserId}
+                isActive={user.isActive}
+                userId={user.id}
+              />
               <div className="flex flex-wrap items-center gap-2">
                 <SaveUserForm role={user.role} userId={user.id} />
-                {user.id !== currentUserId ? (
-                  <form action={deleteUserFromUsersPage}>
-                    <input name="userId" type="hidden" value={user.id} />
-                    <FormSubmitButton
-                      className="min-h-11 rounded-2xl bg-danger-tint px-4 text-sm font-semibold text-danger transition hover:bg-danger/15"
-                      loadingLabel="Deleting..."
-                      type="submit"
-                    >
-                      Delete
-                    </FormSubmitButton>
-                  </form>
-                ) : null}
+                {user.id !== currentUserId ? <DeleteUserForm userId={user.id} /> : null}
               </div>
             </div>
           ))
@@ -268,6 +245,79 @@ function SaveUserForm({ role, userId }: { role: Role; userId: string }) {
           type="submit"
         >
           Save
+        </FormSubmitButton>
+      </form>
+      {error ? (
+        <p className="basis-full text-sm text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+function ActiveStatusForm({
+  disabled,
+  isActive,
+  userId
+}: {
+  disabled: boolean;
+  isActive: boolean;
+  userId: string;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="min-w-0">
+      <form
+        action={async (formData) => {
+          const result = await updateUserActiveStatusFromUsersPage(formData);
+          setError(result.error ?? null);
+        }}
+      >
+        <input name="userId" type="hidden" value={userId} />
+        <input name="isActive" type="hidden" value={String(!isActive)} />
+        <FormSubmitButton
+          className={[
+            "min-h-10 rounded-2xl px-4 text-xs font-semibold uppercase tracking-[0.16em] transition",
+            isActive
+              ? "bg-success-tint text-success hover:bg-success/15"
+              : "bg-surface text-text-2 hover:bg-border"
+          ].join(" ")}
+          disabled={disabled}
+          loadingLabel="Updating..."
+          type="submit"
+        >
+          {isActive ? "Active" : "Inactive"}
+        </FormSubmitButton>
+      </form>
+      {error ? (
+        <p className="mt-2 text-xs text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function DeleteUserForm({ userId }: { userId: string }) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <>
+      <form
+        action={async (formData) => {
+          const result = await deleteUserFromUsersPage(formData);
+          setError(result.error ?? null);
+        }}
+      >
+        <input name="userId" type="hidden" value={userId} />
+        <FormSubmitButton
+          className="min-h-11 rounded-2xl bg-danger-tint px-4 text-sm font-semibold text-danger transition hover:bg-danger/15"
+          loadingLabel="Deleting..."
+          type="submit"
+        >
+          Delete
         </FormSubmitButton>
       </form>
       {error ? (

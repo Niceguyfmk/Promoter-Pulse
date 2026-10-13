@@ -22,10 +22,14 @@ export async function saveUserFromUsersPage(formData: FormData): Promise<{ error
   return {};
 }
 
-export async function updateUserActiveStatusFromUsersPage(formData: FormData) {
-  await updateUserActiveStatus(formData);
+export async function updateUserActiveStatusFromUsersPage(
+  formData: FormData
+): Promise<{ error?: string }> {
+  const result = await updateUserActiveStatus(formData);
+  return result && "error" in result && result.error ? { error: result.error } : {};
 }
 
-export async function deleteUserFromUsersPage(formData: FormData) {
-  await deleteUser(formData);
+export async function deleteUserFromUsersPage(formData: FormData): Promise<{ error?: string }> {
+  const result = await deleteUser(formData);
+  return result && "error" in result && result.error ? { error: result.error } : {};
 }
