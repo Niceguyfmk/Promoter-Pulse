@@ -19,6 +19,7 @@ import {
   createSummaryReportService,
   normalizeSummaryPeriod,
   type SummaryReportData,
+  type SummaryPromoterOption,
   type SummaryReportMetric,
   type SummaryReportPeriod
 } from "@/features/reports/server/summary-report-service";
@@ -460,6 +461,7 @@ export default async function ReportsPage({
     promoterName?: string;
     reportId?: string;
     summaryPeriod?: string;
+    promoterId?: string;
     submittedDate?: string;
     status?: string;
     sortBy?: string;
@@ -479,8 +481,14 @@ export default async function ReportsPage({
     const period = normalizeSummaryPeriod(filters.summaryPeriod);
 
     return (
-      <Suspense fallback={<SummaryReportsSkeleton period={period} />}>
-        <SummaryReportsSection canReview={canReview} period={period} />
+      <Suspense
+        fallback={<SummaryReportsSkeleton period={period} promoterId={filters.promoterId} />}
+      >
+        <SummaryReportsSection
+          canReview={canReview}
+          period={period}
+          promoterId={filters.promoterId}
+        />
       </Suspense>
     );
   }
@@ -1065,17 +1073,25 @@ function ReportsTabs({ activeTab }: { activeTab: "reports" | "summary" }) {
 
 async function SummaryReportsSection({
   canReview,
-  period
+  period,
+  promoterId
 }: {
   canReview: boolean;
   period: SummaryReportPeriod;
+  promoterId: string | undefined;
 }) {
-  const summary = await createSummaryReportService().getSummary(period);
+  const summary = await createSummaryReportService().getSummary(period, promoterId);
 
   return <SummaryReportsView canReview={canReview} period={period} summary={summary} />;
 }
 
-function SummaryReportsSkeleton({ period }: { period: SummaryReportPeriod }) {
+function SummaryReportsSkeleton({
+  period,
+  promoterId
+}: {
+  period: SummaryReportPeriod;
+  promoterId: string | undefined;
+}) {
   return (
     <main className="space-y-6 lg:space-y-8">
       <ReportsTabs activeTab="summary" />
@@ -1085,7 +1101,7 @@ function SummaryReportsSkeleton({ period }: { period: SummaryReportPeriod }) {
           <div className="h-4 w-48 rounded bg-slate-200" />
           <div className="h-10 w-64 rounded bg-slate-200" />
         </div>
-        <PeriodSwitcher currentPeriod={period} />
+        <PeriodSwitcher currentPeriod={period} promoterId={promoterId} />
       </section>
 
       <div className="grid animate-pulse gap-3 md:grid-cols-3">
@@ -1110,7 +1126,7 @@ function SummaryReportsView({
 }) {
   const activityRows: SummaryReportMetric[] = [
     { label: "Forms", value: summary.activitiesByType.forms },
-    { label: "Retail Audits", value: summary.activitiesByType.retailAudits },
+    { label: "Demos with Photo", value: summary.activitiesByType.demosWithPhoto },
     { label: "Photos", value: summary.activitiesByType.photos },
     { label: "Client Notes", value: summary.activitiesByType.clientNotes },
     { label: "Voice Notes", value: summary.activitiesByType.voiceNotes }
@@ -1143,7 +1159,19 @@ function SummaryReportsView({
             See your summary of activities below for {summary.periodLabel}.
           </p>
         </div>
-        <PeriodSwitcher currentPeriod={period} />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {canReview ? (
+            <PromoterPicker
+              period={period}
+              promoters={summary.promoters}
+              selectedPromoterId={summary.selectedPromoterId}
+            />
+          ) : null}
+          <PeriodSwitcher
+            currentPeriod={period}
+            promoterId={summary.selectedPromoterId ?? undefined}
+          />
+        </div>
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -1156,15 +1184,15 @@ function SummaryReportsView({
           />
           <HeroKpiCard
             accent="bg-brass"
-            label="Client Visits"
-            sublabel={`Avg. client visits/day: ${formatDecimal(summary.hero.avgClientVisitsPerDay)}`}
+            label="Interactions"
+            sublabel={`Avg. interactions/day: ${formatDecimal(summary.hero.avgClientVisitsPerDay)}`}
             value={summary.hero.clientVisits}
           />
           <HeroKpiCard
             accent="bg-info"
-            label="Activities"
-            sublabel={`Avg. field activities/day: ${formatDecimal(summary.hero.avgActivitiesPerDay)}`}
-            value={summary.hero.activities}
+            label="Core Products Sold"
+            sublabel={`Avg. core products/day: ${formatDecimal(summary.hero.avgCoreProductsPerDay)}`}
+            value={summary.hero.coreProductsSold}
           />
         </div>
       </section>
@@ -1192,17 +1220,13 @@ function SummaryReportsView({
         </section>
       ) : null}
 
-      <section className="grid gap-3 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-3">
         <EfficiencyCard label="Days Active" value={summary.efficiency.daysActive.toString()} />
         <EfficiencyCard
-          label="Working Time"
-          value={formatDuration(summary.efficiency.workingMinutes)}
+          label="Avg. Working Time"
+          value={formatDuration(summary.efficiency.avgWorkingMinutesPerDay)}
         />
-        <EfficiencyCard label="Total Mileage" value={summary.efficiency.totalMileage.toFixed(2)} />
-        <EfficiencyCard
-          label="Visited Clients"
-          value={summary.efficiency.visitedClients.toString()}
-        />
+        <EfficiencyCard label="Activities" value={summary.hero.activities.toString()} />
       </section>
 
       <SummaryBreakdownSection
@@ -1254,7 +1278,50 @@ function SummaryReportsView({
   );
 }
 
-function PeriodSwitcher({ currentPeriod }: { currentPeriod: SummaryReportPeriod }) {
+function PromoterPicker({
+  period,
+  promoters,
+  selectedPromoterId
+}: {
+  period: SummaryReportPeriod;
+  promoters: SummaryPromoterOption[];
+  selectedPromoterId: string | null;
+}) {
+  return (
+    <form className="flex gap-2">
+      <input name="tab" type="hidden" value="summary" />
+      <input name="summaryPeriod" type="hidden" value={period} />
+      <select
+        aria-label="Promoter"
+        className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-card px-3 text-sm font-semibold text-text shadow-sm outline-none focus:border-garnet focus:ring-1 focus:ring-garnet sm:w-56 sm:flex-none"
+        defaultValue={selectedPromoterId ?? ""}
+        name="promoterId"
+      >
+        <option value="">All promoters</option>
+        {promoters.map((promoter) => (
+          <option key={promoter.id} value={promoter.id}>
+            {promoter.name}
+          </option>
+        ))}
+      </select>
+      <FormSubmitButton
+        className="h-12 rounded-2xl bg-ink px-5 text-sm font-bold text-white"
+        loadingLabel="Applying..."
+        type="submit"
+      >
+        Apply
+      </FormSubmitButton>
+    </form>
+  );
+}
+
+function PeriodSwitcher({
+  currentPeriod,
+  promoterId
+}: {
+  currentPeriod: SummaryReportPeriod;
+  promoterId?: string | undefined;
+}) {
   const periods: Array<{ label: string; value: SummaryReportPeriod }> = [
     { label: "Day", value: "day" },
     { label: "Week", value: "week" },
@@ -1270,7 +1337,9 @@ function PeriodSwitcher({ currentPeriod }: { currentPeriod: SummaryReportPeriod 
             "h-10 rounded-xl px-4 text-center text-sm font-bold leading-10 transition",
             currentPeriod === item.value ? "bg-ink text-white" : "text-text-2 hover:bg-surface"
           ].join(" ")}
-          href={`/reports?tab=summary&summaryPeriod=${item.value}` as Route}
+          href={
+            `/reports?tab=summary&summaryPeriod=${item.value}${promoterId ? `&promoterId=${promoterId}` : ""}` as Route
+          }
           key={item.value}
         >
           {item.label}

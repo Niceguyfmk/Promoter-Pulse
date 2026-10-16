@@ -3,6 +3,7 @@ import "server-only";
 import { AppError } from "@/core/errors/app-error";
 import { createAuthService } from "@/features/auth/server/app-auth-service";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/shared/supabase/server";
+import { extractSurveyLabels } from "@/features/forms/lib/survey-schema";
 import type { Database, Json } from "@/shared/supabase/database.types";
 
 type VisitReportRow = Database["public"]["Tables"]["visit_reports"]["Row"];
@@ -15,14 +16,14 @@ export type SummaryReportMetric = {
   value: number;
 };
 
-export type SummaryReportTrendPoint = {
-  label: string;
-  reps: number;
-  clientVisits: number;
-  activities: number;
+export type SummaryPromoterOption = {
+  id: string;
+  name: string;
 };
 
 export type SummaryReportData = {
+  promoters: SummaryPromoterOption[];
+  selectedPromoterId: string | null;
   organizationName: string;
   period: SummaryReportPeriod;
   periodLabel: string;
@@ -34,10 +35,12 @@ export type SummaryReportData = {
     avgClientVisitsPerDay: number;
     activities: number;
     avgActivitiesPerDay: number;
+    coreProductsSold: number;
+    avgCoreProductsPerDay: number;
   };
   efficiency: {
     daysActive: number;
-    workingMinutes: number;
+    avgWorkingMinutesPerDay: number;
     totalMileage: number;
     visitedClients: number;
   };
@@ -59,16 +62,19 @@ export type SummaryReportData = {
     remote: number;
     missingStoreGps: number;
   };
-  trend: SummaryReportTrendPoint[];
 };
 
 type ActivityCounts = {
   forms: number;
-  retailAudits: number;
+  demosWithPhoto: number;
   photos: number;
   clientNotes: number;
   voiceNotes: number;
 };
+
+// Form questions (matched by normalized title) that feed the summary KPIs.
+const CORE_PRODUCTS_FIELD = "daily sales core products";
+const DEMOS_WITH_PHOTO_FIELD = "demos with photo";
 
 type SummaryRange = {
   end: Date;
@@ -78,13 +84,22 @@ type SummaryRange = {
 export class SummaryReportService {
   constructor(private readonly authService = createAuthService()) {}
 
-  async getSummary(period: SummaryReportPeriod): Promise<SummaryReportData> {
+  async getSummary(period: SummaryReportPeriod, promoterId?: string): Promise<SummaryReportData> {
     const session = await this.authService.requireSession();
     const isAdmin = session.roles.includes("admin");
     const isManager = session.roles.includes("manager");
     const supabase =
       isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
     const range = getSummaryRange(period);
+
+    // Admins can pick any promoter; managers only promoters of their own tenant;
+    // promoters only ever see their own numbers (no picker).
+    const promoters =
+      isAdmin || isManager
+        ? await this.listPromoters(supabase, isAdmin ? null : session.user.tenantId)
+        : [];
+    const selectedPromoterId =
+      promoterId && promoters.some((promoter) => promoter.id === promoterId) ? promoterId : null;
 
     let reportsQuery = supabase
       .from("visit_reports")
@@ -112,6 +127,11 @@ export class SummaryReportService {
       shiftsQuery = shiftsQuery.eq("tenant_id", session.user.tenantId);
     }
 
+    if (selectedPromoterId) {
+      reportsQuery = reportsQuery.eq("promoter_user_id", selectedPromoterId);
+      shiftsQuery = shiftsQuery.eq("promoter_user_id", selectedPromoterId);
+    }
+
     if (!isAdmin && !isManager) {
       reportsQuery = reportsQuery.eq("promoter_user_id", session.user.id);
       shiftsQuery = shiftsQuery.eq("promoter_user_id", session.user.id);
@@ -130,6 +150,27 @@ export class SummaryReportService {
     }
 
     const reportRows = (reports ?? []) as VisitReportRow[];
+    const formIds = [
+      ...new Set(reportRows.flatMap((report) => (report.form_id ? [report.form_id] : [])))
+    ];
+    const labelsByForm = new Map<string, Record<string, string>>();
+
+    if (formIds.length > 0) {
+      const { data: forms, error: formsError } = await supabase
+        .from("survey_forms")
+        .select("id, schema_json")
+        .in("id", formIds);
+
+      if (formsError) {
+        console.error("[SummaryReportService] Failed to load form schemas:", formsError);
+        throw new AppError("INTERNAL_ERROR", "Failed to load summary report", formsError);
+      }
+
+      for (const form of forms ?? []) {
+        labelsByForm.set(form.id, extractSurveyLabels(form.schema_json));
+      }
+    }
+
     const storeIds = [...new Set(reportRows.map((report) => report.store_id))];
     const storesWithGps = new Set<string>();
 
@@ -157,8 +198,50 @@ export class SummaryReportService {
       range,
       reports: reportRows,
       shifts: (shifts ?? []) as ShiftRow[],
-      storesWithGps
+      storesWithGps,
+      labelsByForm,
+      promoters,
+      selectedPromoterId
     });
+  }
+
+  private async listPromoters(
+    supabase: ReturnType<typeof createSupabaseAdminClient>,
+    tenantId: string | null
+  ): Promise<SummaryPromoterOption[]> {
+    let assignmentsQuery = supabase
+      .from("user_role_assignments")
+      .select("user_id")
+      .eq("role_id", "promoter");
+
+    if (tenantId) {
+      assignmentsQuery = assignmentsQuery.eq("tenant_id", tenantId);
+    }
+
+    const { data: assignments, error: assignmentsError } = await assignmentsQuery;
+    if (assignmentsError) {
+      console.error("[SummaryReportService] Failed to load promoters:", assignmentsError);
+      throw new AppError("INTERNAL_ERROR", "Failed to load summary report", assignmentsError);
+    }
+
+    const userIds = [...new Set((assignments ?? []).map((row) => row.user_id))];
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("id, full_name, email")
+      .in("id", userIds)
+      .is("deleted_at", null)
+      .order("full_name");
+
+    if (usersError) {
+      console.error("[SummaryReportService] Failed to load promoters:", usersError);
+      throw new AppError("INTERNAL_ERROR", "Failed to load summary report", usersError);
+    }
+
+    return (users ?? []).map((user) => ({ id: user.id, name: user.full_name || user.email }));
   }
 }
 
@@ -180,7 +263,10 @@ function buildSummaryReport({
   range,
   reports,
   shifts,
-  storesWithGps
+  storesWithGps,
+  labelsByForm,
+  promoters,
+  selectedPromoterId
 }: {
   organizationName: string;
   period: SummaryReportPeriod;
@@ -188,6 +274,9 @@ function buildSummaryReport({
   reports: VisitReportRow[];
   shifts: ShiftRow[];
   storesWithGps: Set<string>;
+  labelsByForm: Map<string, Record<string, string>>;
+  promoters: SummaryPromoterOption[];
+  selectedPromoterId: string | null;
 }): SummaryReportData {
   const days = getRangeDays(range);
   const uniqueRepIds = new Set(reports.map((report) => report.promoter_user_id));
@@ -197,17 +286,29 @@ function buildSummaryReport({
   );
   const activitiesByType = reports.reduce<ActivityCounts>(
     (totals, report) => {
-      const counts = reportActivityCounts(report);
+      const counts = reportActivityCounts(report, labelsByForm);
       totals.forms += counts.forms;
-      totals.retailAudits += counts.retailAudits;
+      totals.demosWithPhoto += counts.demosWithPhoto;
       totals.photos += counts.photos;
       totals.clientNotes += counts.clientNotes;
       totals.voiceNotes += counts.voiceNotes;
       return totals;
     },
-    { forms: 0, retailAudits: 0, photos: 0, clientNotes: 0, voiceNotes: 0 }
+    { forms: 0, demosWithPhoto: 0, photos: 0, clientNotes: 0, voiceNotes: 0 }
+  );
+  const coreProductsSold = reports.reduce(
+    (total, report) => total + sumNumericAnswer(report, labelsByForm, CORE_PRODUCTS_FIELD),
+    0
   );
   const activities = Object.values(activitiesByType).reduce((total, value) => total + value, 0);
+  // Average over promoter-days actually worked (one promoter working 9h on each of
+  // 3 days gives 9h, not 27h).
+  const promoterDays = new Set(
+    reports.map(
+      (report) =>
+        report.promoter_user_id + ":" + dayKey(new Date(report.checked_out_at || report.started_at))
+    )
+  );
   const workingMinutes = reports.reduce(
     (total, report) => total + reportDurationMinutes(report),
     0
@@ -235,6 +336,8 @@ function buildSummaryReport({
   }).length;
 
   return {
+    promoters,
+    selectedPromoterId,
     organizationName,
     period,
     periodLabel: formatPeriodLabel(period, range),
@@ -245,11 +348,13 @@ function buildSummaryReport({
       clientVisits: reports.length,
       avgClientVisitsPerDay: reports.length / Math.max(days.length, 1),
       activities,
-      avgActivitiesPerDay: activities / Math.max(days.length, 1)
+      avgActivitiesPerDay: activities / Math.max(days.length, 1),
+      coreProductsSold,
+      avgCoreProductsPerDay: coreProductsSold / Math.max(days.length, 1)
     },
     efficiency: {
       daysActive: activeDays.size,
-      workingMinutes,
+      avgWorkingMinutesPerDay: Math.round(workingMinutes / Math.max(promoterDays.size, 1)),
       totalMileage,
       visitedClients: uniqueStoreIds.size
     },
@@ -278,8 +383,7 @@ function buildSummaryReport({
           storesWithGps.has(report.store_id) &&
           !(report.check_in_type === "gps" && report.checkin_at)
       ).length
-    },
-    trend: buildTrend(period, range, reports)
+    }
   };
 }
 
@@ -373,12 +477,15 @@ function countArray(value: Json) {
   return Array.isArray(value) ? value.length : 0;
 }
 
-function reportActivityCounts(report: VisitReportRow): ActivityCounts {
+function reportActivityCounts(
+  report: VisitReportRow,
+  labelsByForm: Map<string, Record<string, string>>
+): ActivityCounts {
   const formAnswers = asRecord(report.form_answers);
 
   return {
     forms: report.form_id || report.form_name || Object.keys(formAnswers).length > 0 ? 1 : 0,
-    retailAudits: isRetailAudit(report) ? 1 : 0,
+    demosWithPhoto: sumNumericAnswer(report, labelsByForm, DEMOS_WITH_PHOTO_FIELD),
     photos: countArray(report.photo_items) + countFormAnswerImages(report.form_answers),
     clientNotes: report.note?.trim() ? 1 : 0,
     voiceNotes: countArray(report.voice_note_items)
@@ -400,13 +507,38 @@ function reportDurationMinutes(report: VisitReportRow) {
   return Math.floor((end - start) / 60000);
 }
 
-function isRetailAudit(report: VisitReportRow) {
-  const name = report.form_name?.toLowerCase() || "";
-  return name.includes("audit") || Object.keys(asRecord(report.merchandising)).length > 0;
+function normalizeFieldName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
-function countReportActivities(report: VisitReportRow) {
-  return Object.values(reportActivityCounts(report)).reduce((total, value) => total + value, 0);
+// Sums the numeric answer(s) of a form question, matched by its title (or name).
+function sumNumericAnswer(
+  report: VisitReportRow,
+  labelsByForm: Map<string, Record<string, string>>,
+  field: string
+) {
+  const labels = report.form_id ? (labelsByForm.get(report.form_id) ?? {}) : {};
+  let total = 0;
+
+  for (const [key, value] of Object.entries(asRecord(report.form_answers))) {
+    const matches =
+      normalizeFieldName(labels[key] ?? "").includes(field) ||
+      normalizeFieldName(key).includes(field);
+    if (!matches) {
+      continue;
+    }
+
+    const parsed =
+      typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+    if (Number.isFinite(parsed)) {
+      total += parsed;
+    }
+  }
+
+  return total;
 }
 
 function extractCurrencyTotal(value: Json): number {
@@ -502,60 +634,4 @@ function formatPeriodLabel(period: SummaryReportPeriod, range: SummaryRange) {
   const endInclusive = new Date(range.end);
   endInclusive.setDate(endInclusive.getDate() - 1);
   return `${formatter.format(range.start)} - ${formatter.format(endInclusive)}`;
-}
-
-function buildTrend(period: SummaryReportPeriod, range: SummaryRange, reports: VisitReportRow[]) {
-  return getTrendBuckets(period, range).map((bucket) => {
-    const bucketReports = reports.filter((report) => {
-      const occurredAt = new Date(report.checked_out_at || report.started_at).getTime();
-      return occurredAt >= bucket.start.getTime() && occurredAt < bucket.end.getTime();
-    });
-
-    return {
-      label: bucket.label,
-      reps: new Set(bucketReports.map((report) => report.promoter_user_id)).size,
-      clientVisits: bucketReports.length,
-      activities: bucketReports.reduce((total, report) => total + countReportActivities(report), 0)
-    };
-  });
-}
-
-function getTrendBuckets(period: SummaryReportPeriod, range: SummaryRange) {
-  const buckets: Array<{ end: Date; label: string; start: Date }> = [];
-  const cursor = new Date(range.start);
-
-  if (period === "day") {
-    const formatter = new Intl.DateTimeFormat("en", { hour: "numeric" });
-    for (let hour = 0; hour < 24; hour += 1) {
-      const start = new Date(range.start);
-      start.setHours(hour, 0, 0, 0);
-      const end = new Date(start);
-      end.setHours(end.getHours() + 1);
-      buckets.push({ start, end, label: formatter.format(start) });
-    }
-    return buckets;
-  }
-
-  if (period === "year") {
-    const formatter = new Intl.DateTimeFormat("en", { month: "short" });
-    while (cursor < range.end) {
-      const start = new Date(cursor);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + 1);
-      buckets.push({ start, end, label: formatter.format(start) });
-      cursor.setMonth(cursor.getMonth() + 1);
-    }
-    return buckets;
-  }
-
-  const formatter = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" });
-  while (cursor < range.end) {
-    const start = new Date(cursor);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    buckets.push({ start, end, label: formatter.format(start) });
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return buckets;
 }
