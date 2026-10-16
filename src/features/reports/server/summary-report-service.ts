@@ -41,15 +41,7 @@ export type SummaryReportData = {
     totalMileage: number;
     visitedClients: number;
   };
-  activitiesByType: {
-    forms: number;
-    retailAudits: number;
-    photos: number;
-    clientNotes: number;
-    newClients: number;
-    clientConversions: number;
-    salesDocuments: number;
-  };
+  activitiesByType: ActivityCounts;
   formsBreakdown: Array<SummaryReportMetric>;
   salesAndMerchandising: {
     salesDocuments: number;
@@ -62,7 +54,20 @@ export type SummaryReportData = {
     unscheduledVisits: number;
     missedSchedule: number;
   };
+  checkInStatus: {
+    gpsVerified: number;
+    remote: number;
+    missingStoreGps: number;
+  };
   trend: SummaryReportTrendPoint[];
+};
+
+type ActivityCounts = {
+  forms: number;
+  retailAudits: number;
+  photos: number;
+  clientNotes: number;
+  voiceNotes: number;
 };
 
 type SummaryRange = {
@@ -77,7 +82,8 @@ export class SummaryReportService {
     const session = await this.authService.requireSession();
     const isAdmin = session.roles.includes("admin");
     const isManager = session.roles.includes("manager");
-    const supabase = isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
+    const supabase =
+      isAdmin || isManager ? createSupabaseAdminClient() : await createSupabaseServerClient();
     const range = getSummaryRange(period);
 
     let reportsQuery = supabase
@@ -95,7 +101,11 @@ export class SummaryReportService {
       .gte("scheduled_start_at", range.start.toISOString())
       .lt("scheduled_start_at", range.end.toISOString());
 
-    const tenantQuery = supabase.from("tenants").select("name").eq("id", session.user.tenantId).maybeSingle();
+    const tenantQuery = supabase
+      .from("tenants")
+      .select("name")
+      .eq("id", session.user.tenantId)
+      .maybeSingle();
 
     if (isManager || !isAdmin) {
       reportsQuery = reportsQuery.eq("tenant_id", session.user.tenantId);
@@ -107,8 +117,11 @@ export class SummaryReportService {
       shiftsQuery = shiftsQuery.eq("promoter_user_id", session.user.id);
     }
 
-    const [{ data: reports, error: reportsError }, { data: shifts, error: shiftsError }, { data: tenant }] =
-      await Promise.all([reportsQuery, shiftsQuery, tenantQuery]);
+    const [
+      { data: reports, error: reportsError },
+      { data: shifts, error: shiftsError },
+      { data: tenant }
+    ] = await Promise.all([reportsQuery, shiftsQuery, tenantQuery]);
 
     const error = reportsError || shiftsError;
     if (error) {
@@ -116,12 +129,35 @@ export class SummaryReportService {
       throw new AppError("INTERNAL_ERROR", "Failed to load summary report", error);
     }
 
+    const reportRows = (reports ?? []) as VisitReportRow[];
+    const storeIds = [...new Set(reportRows.map((report) => report.store_id))];
+    const storesWithGps = new Set<string>();
+
+    if (storeIds.length > 0) {
+      const { data: stores, error: storesError } = await supabase
+        .from("retail_stores")
+        .select("id, latitude, longitude")
+        .in("id", storeIds);
+
+      if (storesError) {
+        console.error("[SummaryReportService] Failed to load store locations:", storesError);
+        throw new AppError("INTERNAL_ERROR", "Failed to load summary report", storesError);
+      }
+
+      for (const store of stores ?? []) {
+        if (store.latitude != null && store.longitude != null) {
+          storesWithGps.add(store.id);
+        }
+      }
+    }
+
     return buildSummaryReport({
       organizationName: tenant?.name || "Company",
       period,
       range,
-      reports: (reports ?? []) as VisitReportRow[],
-      shifts: (shifts ?? []) as ShiftRow[]
+      reports: reportRows,
+      shifts: (shifts ?? []) as ShiftRow[],
+      storesWithGps
     });
   }
 }
@@ -143,72 +179,55 @@ function buildSummaryReport({
   period,
   range,
   reports,
-  shifts
+  shifts,
+  storesWithGps
 }: {
   organizationName: string;
   period: SummaryReportPeriod;
   range: SummaryRange;
   reports: VisitReportRow[];
   shifts: ShiftRow[];
+  storesWithGps: Set<string>;
 }): SummaryReportData {
   const days = getRangeDays(range);
   const uniqueRepIds = new Set(reports.map((report) => report.promoter_user_id));
   const uniqueStoreIds = new Set(reports.map((report) => report.store_id));
-  const activeDays = new Set(reports.map((report) => dayKey(new Date(report.checked_out_at || report.started_at))));
-  const activitiesByType = reports.reduce(
+  const activeDays = new Set(
+    reports.map((report) => dayKey(new Date(report.checked_out_at || report.started_at)))
+  );
+  const activitiesByType = reports.reduce<ActivityCounts>(
     (totals, report) => {
-      const formAnswers = asRecord(report.form_answers);
-      const salesNumbers = asRecord(report.sales_numbers);
-      const merchandising = asRecord(report.merchandising);
-
-      if (report.form_id || report.form_name || Object.keys(formAnswers).length > 0) {
-        totals.forms += 1;
-      }
-
-      if (isRetailAudit(report)) {
-        totals.retailAudits += 1;
-      }
-
-      totals.photos += countPhotos(report.photo_items);
-
-      if (report.note?.trim()) {
-        totals.clientNotes += 1;
-      }
-
-      if (hasMatchingSignal(formAnswers, ["new client", "new_client", "newCustomer", "new customer"])) {
-        totals.newClients += 1;
-      }
-
-      if (hasMatchingSignal(formAnswers, ["conversion", "converted", "client conversion"])) {
-        totals.clientConversions += 1;
-      }
-
-      if (Object.keys(salesNumbers).length > 0 || hasMatchingSignal(merchandising, ["sales document", "invoice", "order"])) {
-        totals.salesDocuments += 1;
-      }
-
+      const counts = reportActivityCounts(report);
+      totals.forms += counts.forms;
+      totals.retailAudits += counts.retailAudits;
+      totals.photos += counts.photos;
+      totals.clientNotes += counts.clientNotes;
+      totals.voiceNotes += counts.voiceNotes;
       return totals;
     },
-    {
-      forms: 0,
-      retailAudits: 0,
-      photos: 0,
-      clientNotes: 0,
-      newClients: 0,
-      clientConversions: 0,
-      salesDocuments: 0
-    }
+    { forms: 0, retailAudits: 0, photos: 0, clientNotes: 0, voiceNotes: 0 }
   );
   const activities = Object.values(activitiesByType).reduce((total, value) => total + value, 0);
-  const workingMinutes = reports.reduce((total, report) => total + reportDurationMinutes(report), 0);
-  const totalMileage = reports.reduce((total, report) => total + Number(report.checkin_distance_meters ?? 0) / 1000, 0);
+  const workingMinutes = reports.reduce(
+    (total, report) => total + reportDurationMinutes(report),
+    0
+  );
+  const totalMileage = reports.reduce(
+    (total, report) => total + Number(report.checkin_distance_meters ?? 0) / 1000,
+    0
+  );
   const formCounts = reports.reduce((counts, report) => {
     const label = report.form_name || "Daily Check-in";
     counts.set(label, (counts.get(label) ?? 0) + 1);
     return counts;
   }, new Map<string, number>());
-  const salesDocuments = reports.filter((report) => Object.keys(asRecord(report.sales_numbers)).length > 0).length;
-  const totalValue = reports.reduce((total, report) => total + extractCurrencyTotal(report.sales_numbers), 0);
+  const salesDocuments = reports.filter(
+    (report) => Object.keys(asRecord(report.sales_numbers)).length > 0
+  ).length;
+  const totalValue = reports.reduce(
+    (total, report) => total + extractCurrencyTotal(report.sales_numbers),
+    0
+  );
   const scheduledMatches = matchScheduledVisits(reports, shifts);
   const missedSchedule = shifts.filter((shift) => {
     const ended = new Date(shift.scheduled_end_at).getTime() < Date.now();
@@ -247,6 +266,19 @@ function buildSummaryReport({
       unscheduledVisits: Math.max(reports.length - scheduledMatches, 0),
       missedSchedule
     },
+    checkInStatus: {
+      // Same classification as the Review tab's check-in pill.
+      missingStoreGps: reports.filter((report) => !storesWithGps.has(report.store_id)).length,
+      gpsVerified: reports.filter(
+        (report) =>
+          storesWithGps.has(report.store_id) && report.check_in_type === "gps" && report.checkin_at
+      ).length,
+      remote: reports.filter(
+        (report) =>
+          storesWithGps.has(report.store_id) &&
+          !(report.check_in_type === "gps" && report.checkin_at)
+      ).length
+    },
     trend: buildTrend(period, range, reports)
   };
 }
@@ -255,15 +287,13 @@ function getSummaryRange(period: SummaryReportPeriod): SummaryRange {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
 
-  if (period === "day") {
-    start.setDate(start.getDate() - 1);
-  } else if (period === "week") {
+  if (period === "week") {
     const day = start.getDay();
     const daysSinceMonday = day === 0 ? 6 : day - 1;
-    start.setDate(start.getDate() - daysSinceMonday - 7);
+    start.setDate(start.getDate() - daysSinceMonday);
   } else if (period === "month") {
     start.setDate(1);
-  } else {
+  } else if (period === "year") {
     start.setMonth(0, 1);
   }
 
@@ -308,12 +338,51 @@ function asRecord(value: Json): Record<string, Json> {
   return value as Record<string, Json>;
 }
 
-function countPhotos(value: Json) {
-  if (!Array.isArray(value)) {
-    return 0;
+function isImageUpload(name: string, type: string, url: string) {
+  return (
+    type.startsWith("image/") ||
+    /\.(png|jpe?g|webp|gif|heic|heif|svg)(\?|$)/i.test(`${name} ${url}`)
+  );
+}
+
+// Photos come from the report's photo_items and from image uploads inside the
+// SurveyJS form answers ({ name, type, content } objects, possibly in arrays).
+function countFormAnswerImages(node: Json): number {
+  if (Array.isArray(node)) {
+    return node.reduce<number>((total, item) => total + countFormAnswerImages(item), 0);
   }
 
-  return value.length;
+  if (node && typeof node === "object") {
+    const record = node as Record<string, Json>;
+    if (typeof record.content === "string") {
+      const name = typeof record.name === "string" ? record.name : "";
+      const type = typeof record.type === "string" ? record.type : "";
+      return isImageUpload(name, type, record.content) ? 1 : 0;
+    }
+
+    return Object.values(record).reduce<number>(
+      (total, value) => total + countFormAnswerImages(value),
+      0
+    );
+  }
+
+  return 0;
+}
+
+function countArray(value: Json) {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function reportActivityCounts(report: VisitReportRow): ActivityCounts {
+  const formAnswers = asRecord(report.form_answers);
+
+  return {
+    forms: report.form_id || report.form_name || Object.keys(formAnswers).length > 0 ? 1 : 0,
+    retailAudits: isRetailAudit(report) ? 1 : 0,
+    photos: countArray(report.photo_items) + countFormAnswerImages(report.form_answers),
+    clientNotes: report.note?.trim() ? 1 : 0,
+    voiceNotes: countArray(report.voice_note_items)
+  };
 }
 
 function reportDurationMinutes(report: VisitReportRow) {
@@ -331,25 +400,13 @@ function reportDurationMinutes(report: VisitReportRow) {
   return Math.floor((end - start) / 60000);
 }
 
-function hasMatchingSignal(record: Record<string, Json>, needles: string[]) {
-  const haystack = JSON.stringify(record).toLowerCase();
-  return needles.some((needle) => haystack.includes(needle.toLowerCase()));
-}
-
 function isRetailAudit(report: VisitReportRow) {
   const name = report.form_name?.toLowerCase() || "";
   return name.includes("audit") || Object.keys(asRecord(report.merchandising)).length > 0;
 }
 
 function countReportActivities(report: VisitReportRow) {
-  const salesNumbers = asRecord(report.sales_numbers);
-  return (
-    (report.form_id || report.form_name || Object.keys(asRecord(report.form_answers)).length > 0 ? 1 : 0) +
-    (isRetailAudit(report) ? 1 : 0) +
-    countPhotos(report.photo_items) +
-    (report.note?.trim() ? 1 : 0) +
-    (Object.keys(salesNumbers).length > 0 ? 1 : 0)
-  );
+  return Object.values(reportActivityCounts(report)).reduce((total, value) => total + value, 0);
 }
 
 function extractCurrencyTotal(value: Json): number {
@@ -384,13 +441,21 @@ function matchScheduledVisits(reports: VisitReportRow[], shifts: ShiftRow[]) {
   const availableShiftKeys = new Map<string, number>();
 
   for (const shift of shifts) {
-    const key = scheduledVisitKey(shift.promoter_user_id, shift.store_id, new Date(shift.scheduled_start_at));
+    const key = scheduledVisitKey(
+      shift.promoter_user_id,
+      shift.store_id,
+      new Date(shift.scheduled_start_at)
+    );
     availableShiftKeys.set(key, (availableShiftKeys.get(key) ?? 0) + 1);
   }
 
   let matches = 0;
   for (const report of reports) {
-    const key = scheduledVisitKey(report.promoter_user_id, report.store_id, new Date(report.checked_out_at || report.started_at));
+    const key = scheduledVisitKey(
+      report.promoter_user_id,
+      report.store_id,
+      new Date(report.checked_out_at || report.started_at)
+    );
     const available = availableShiftKeys.get(key) ?? 0;
 
     if (available > 0) {
@@ -406,7 +471,11 @@ function scheduledVisitKey(promoterUserId: string, storeId: string, date: Date) 
   return `${promoterUserId}:${storeId}:${dayKey(date)}`;
 }
 
-function averageByDay(reports: VisitReportRow[], days: Date[], selector: (report: VisitReportRow) => string) {
+function averageByDay(
+  reports: VisitReportRow[],
+  days: Date[],
+  selector: (report: VisitReportRow) => string
+) {
   if (days.length === 0) {
     return 0;
   }
