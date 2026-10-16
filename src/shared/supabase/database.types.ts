@@ -307,6 +307,32 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["visit_reports"]["Insert"]>;
         Relationships: [];
       };
+      audit_logs: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          actor_user_id: string | null;
+          action: Database["public"]["Enums"]["audit_action"];
+          target_type: string;
+          target_id: string | null;
+          request_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          actor_user_id?: string | null;
+          action: Database["public"]["Enums"]["audit_action"];
+          target_type: string;
+          target_id?: string | null;
+          request_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["audit_logs"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -323,6 +349,13 @@ export type Database = {
       auth_provider: "supabase" | "okta" | "auth0" | "azure_ad";
       app_role: "admin" | "manager" | "promoter";
       shift_status: "scheduled" | "checked_in" | "checked_out" | "missed";
+      audit_action:
+        | "auth.session_resolved"
+        | "shift.check_in"
+        | "shift.check_out"
+        | "photo.signed_upload_requested"
+        | "admin.user_updated"
+        | "report.deleted";
     };
     CompositeTypes: Record<string, never>;
   };

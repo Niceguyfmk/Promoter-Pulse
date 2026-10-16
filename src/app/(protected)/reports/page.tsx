@@ -9,6 +9,7 @@ import {
   type VisitReportWithRelations
 } from "@/features/attendance/server/visit-report-service";
 import {
+  deleteReportsBeforeAction,
   deleteVisitReportAction,
   reviewVisitReportAction
 } from "@/features/attendance/server/visit-report-actions";
@@ -748,6 +749,8 @@ async function ManagerReportsSection({
     normalizeSortDirection(filters.sortDir)
   );
   const statusCounts = managerStatusCounts(sortedReports);
+  const session = await createAuthService().requireSession();
+  const isAdmin = session.roles.includes("admin");
 
   return (
     <>
@@ -760,6 +763,34 @@ async function ManagerReportsSection({
           {reports.length} reports
         </span>
       </div>
+
+      {isAdmin ? (
+        <form
+          action={deleteReportsBeforeAction}
+          className="flex flex-col gap-3 rounded-2xl border border-danger/25 bg-card p-4 shadow-sm sm:flex-row sm:items-end"
+        >
+          <label className="grid gap-1 text-sm font-medium text-text-2">
+            Delete all reports submitted before
+            <input
+              className="h-11 rounded-xl border border-border bg-card px-3 text-text"
+              name="cutoffDate"
+              required
+              type="date"
+            />
+          </label>
+          <label className="flex h-11 items-center gap-2 text-sm text-text-2">
+            <input name="confirm" required type="checkbox" />I understand this removes them from
+            every company&apos;s reports
+          </label>
+          <FormSubmitButton
+            className="h-11 rounded-xl border border-danger/25 bg-card px-5 text-sm font-bold text-danger transition hover:bg-danger-tint"
+            loadingLabel="Deleting..."
+            type="submit"
+          >
+            Delete older reports
+          </FormSubmitButton>
+        </form>
+      ) : null}
 
       <section className="grid gap-3 md:grid-cols-3">
         <ManagerStatusCard

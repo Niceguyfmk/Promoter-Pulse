@@ -167,6 +167,12 @@ export async function deleteVisitReportAction(formData: FormData) {
   redirect("/reports" as Route);
 }
 
+export async function deleteReportsBeforeAction(formData: FormData) {
+  await createVisitReportService().deleteReportsBefore(text(formData, "cutoffDate"));
+  revalidatePath("/reports");
+  redirect("/reports" as Route);
+}
+
 export async function uploadSurveyFileAction(formData: FormData) {
   const reportId = formData.get("reportId") as string;
   const storeId = formData.get("storeId") as string;

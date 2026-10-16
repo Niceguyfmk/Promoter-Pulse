@@ -1034,7 +1034,7 @@ export class VisitReportService {
       })
       .eq("id", reportId)
       .is("deleted_at", null)
-      .select("id");
+      .select("id, tenant_id");
 
     if (!isAdmin) {
       query = query.eq("tenant_id", session.user.tenantId);
@@ -1053,6 +1053,83 @@ export class VisitReportService {
     if (!data) {
       throw new AppError("NOT_FOUND", "Report not found");
     }
+
+    await this.recordReportDeletions(session.user.id, [data], { bulk: false });
+  }
+
+  private async recordReportDeletions(
+    actorUserId: string,
+    deleted: { id: string; tenant_id: string }[],
+    metadata: Record<string, Json>
+  ) {
+    if (deleted.length === 0) {
+      return;
+    }
+
+    const idsByTenant = new Map<string, string[]>();
+    for (const report of deleted) {
+      idsByTenant.set(report.tenant_id, [...(idsByTenant.get(report.tenant_id) ?? []), report.id]);
+    }
+
+    const { error } = await createSupabaseAdminClient()
+      .from("audit_logs")
+      .insert(
+        [...idsByTenant].map(([tenantId, reportIds]) => ({
+          tenant_id: tenantId,
+          actor_user_id: actorUserId,
+          action: "report.deleted" as const,
+          target_type: "visit_report",
+          target_id: reportIds.length === 1 ? (reportIds[0] ?? null) : null,
+          metadata: { ...metadata, count: reportIds.length, reportIds }
+        }))
+      );
+
+    if (error) {
+      console.error("[VisitReportService] Reports deleted but audit log failed:", error);
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Reports were deleted but logging the deletion failed",
+        error
+      );
+    }
+  }
+
+  async deleteReportsBefore(cutoffDate: string) {
+    const session = await this.authService.requireSession();
+
+    if (!session.roles.includes("admin")) {
+      throw new AppError("FORBIDDEN", "Only admins can bulk delete reports");
+    }
+
+    const cutoff = new Date(`${cutoffDate}T00:00:00`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cutoffDate) || Number.isNaN(cutoff.getTime())) {
+      throw new AppError("VALIDATION_ERROR", "A valid cutoff date is required");
+    }
+    const cutoffIso = cutoff.toISOString();
+
+    // "Date submitted" is checked_out_at; drafts have none, so fall back to created_at.
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from("visit_reports")
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .is("deleted_at", null)
+      .or(`checked_out_at.lt.${cutoffIso},and(checked_out_at.is.null,created_at.lt.${cutoffIso})`)
+      .select("id, tenant_id");
+
+    if (error) {
+      console.error("[VisitReportService] Failed to bulk delete reports:", error);
+      throw new AppError("INTERNAL_ERROR", "Failed to delete reports", error);
+    }
+
+    await this.recordReportDeletions(session.user.id, data ?? [], {
+      bulk: true,
+      cutoffDate
+    });
+
+    return data?.length ?? 0;
   }
 }
 

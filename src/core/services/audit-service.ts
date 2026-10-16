@@ -3,7 +3,8 @@ export type AuditAction =
   | "shift.check_in"
   | "shift.check_out"
   | "photo.signed_upload_requested"
-  | "admin.user_updated";
+  | "admin.user_updated"
+  | "report.deleted";
 
 export type AuditEventInput = {
   tenantId: string;
